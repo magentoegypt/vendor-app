@@ -20,6 +20,11 @@ on:
         description: Update notes shown to testers on Loadly
         required: false
         default: ''
+      platform:
+        description: Which apps to build
+        type: choice
+        options: [both, android, ios]
+        default: both
 
 permissions:
   contents: read
@@ -62,6 +67,8 @@ jobs:
   android:
     name: Android APK
     needs: test
+    # Pushes have no inputs, so they build both apps.
+    if: github.event.inputs.platform != 'ios'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
@@ -148,16 +155,20 @@ jobs:
   ios:
     name: iOS IPA
     needs: [test, ios-secrets]
-    if: needs.ios-secrets.outputs.ready == 'true'
+    if: needs.ios-secrets.outputs.ready == 'true' && github.event.inputs.platform != 'android'
     runs-on: macos-15
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
-      # Flutter 3.22 predates Xcode 26; use the newest Xcode 16 on the image.
+      # Flutter 3.22 predates Xcode 26. Xcode 16.4 is the image default and the
+      # one whose iOS platform is installed; Xcode_16.app is 16.0 without it.
       - name: Select Xcode 16
         run: |
-          xcode=$(ls -d /Applications/Xcode_16*.app | tail -1)
+          xcode=/Applications/Xcode_16.4.app
+          if [ ! -d "$xcode" ]; then
+            xcode=$(ls -d /Applications/Xcode_16.*.app | sort -V | tail -1)
+          fi
           sudo xcode-select -s "$xcode"
           xcodebuild -version
 
