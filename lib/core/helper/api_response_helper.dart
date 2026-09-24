@@ -56,9 +56,7 @@ dynamic apiResponseHelper({
       }
     case 401:
       if(token.isEmpty){
-        final decodedResponse = json.decode(response.body);
-        throw HttpException(
-            '${decodedResponse['message'] ?? ""} ${decodedResponse['details'] ?? ""}'); //: ${response.statusCode}
+        throw HttpException(magentoErrorMessage(response.body));
       }else{
         // The stored token was rejected: end the session and let the app send
         // the vendor to login with a reason, instead of silently swapping
@@ -71,17 +69,19 @@ dynamic apiResponseHelper({
         throw UnauthorizedException(response.statusCode);
       }
     default:
-      final decodedResponse = json.decode(response.body);
-      throw HttpException(
-          '${decodedResponse['message'] ?? ""} ${decodedResponse['parameters'] ?? ""} : ${response.statusCode}');
+      throw HttpException(magentoErrorMessage(response.body));
   }
 }
 
-/// The readable text of a Magento REST error, or null when [body] is not one
-/// (for example a CDN error page). Magento sends the phrase and its arguments
-/// separately ({"message": "... contact %1.", "parameters": ["x"]}, or named
-/// "%fieldName" placeholders with a parameters object), so they are
-/// substituted here.
+/// The readable text of a Magento REST error. Magento sends the phrase and its
+/// arguments separately ({"message": "... contact %1.", "parameters": ["x"]},
+/// or named "%fieldName" placeholders with a parameters object), so they are
+/// substituted here rather than shown raw with the status code.
+String magentoErrorMessage(String body) =>
+    magentoErrorText(body) ?? 'Error Communicating with Server';
+
+/// Like [magentoErrorMessage], but null when [body] is not a Magento error
+/// (for example a CDN error page).
 String? magentoErrorText(String body) {
   dynamic decoded;
   try {

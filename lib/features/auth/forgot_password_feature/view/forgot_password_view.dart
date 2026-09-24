@@ -207,6 +207,10 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                     const SizedBox(height: 50.0),
                     InkWell(
                       onTap: () {
+                        // One tap, one request: Magento rate-limits resets, so
+                        // a repeat while the first is in flight uses up the
+                        // allowance and fails.
+                        if (context.read<ForgotPasswordBloc>().state is ForgotPasswordLoading) return;
                         if(_allValidation()){
                           if(isLoginOTP){
                             Map<String, dynamic> params = {
@@ -220,7 +224,7 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                             );
                           }else{
                             Map<String, dynamic> ForgotPasswordMap = {
-                              "email": _emailController.text,
+                              "email": _emailController.text.trim(),
                               "template": "email_reset"
                             };
                             /// init ForgotPassword event
