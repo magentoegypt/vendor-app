@@ -6,7 +6,7 @@ import 'package:get_thumbnail_video/video_thumbnail.dart';
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
-import 'package:flutter_native_image/flutter_native_image.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:flutter/material.dart';
@@ -146,11 +146,7 @@ class ImagePicker {
       var file = await image.file;
       print(file?.uri);
       if (file?.path != null) {
-        final compressedFile = await FlutterNativeImage.compressImage(
-          file!.path,
-        );
-        final bytes = compressedFile.readAsBytesSync();
-        return base64Encode(bytes);
+        return base64Encode(await _compressFile(file!.path));
       }
     }
 
@@ -165,21 +161,12 @@ class ImagePicker {
 
       if (byteData != null) {
         final tmpFile = await writeToFile(byteData);
-
-        final compressedFile = await FlutterNativeImage.compressImage(
-          tmpFile.path,
-        );
-        final bytes = compressedFile.readAsBytesSync();
-        base64 += base64Encode(bytes);
+        base64 += base64Encode(await _compressFile(tmpFile.path));
       }
     }
 
     if (image is XFile) {
-      final compressedFile = await FlutterNativeImage.compressImage(
-        image.path,
-      );
-      final bytes = compressedFile.readAsBytesSync();
-      base64 += base64Encode(bytes);
+      base64 += base64Encode(await _compressFile(image.path));
     }
 
     if (image is String) {
@@ -188,6 +175,14 @@ class ImagePicker {
       }
     }
     return base64;
+  }
+
+  /// Re-encodes the photo at [path] as a JPEG at quality 70, as the old
+  /// flutter_native_image default did, or returns it unchanged if that fails.
+  static Future<Uint8List> _compressFile(String path) async {
+    final compressed =
+        await FlutterImageCompress.compressWithFile(path, quality: 70);
+    return compressed ?? await file.File(path).readAsBytes();
   }
 
   static Future<String> compressAndConvertImagesForUploading(
