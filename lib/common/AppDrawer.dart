@@ -27,21 +27,21 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: Container(
-        color: AppColors.primary,
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            _createHeader(context,false),
-            Divider(color: Colors.white,),
-            _createDrawerItem(context: context, icon: Icons.person, text: AppLocalizations.of(context)!.sellerProfile,index: 1, onTap: () {onNavigationItemSelect!(1);  }),
-            _createDrawerItem(context: context, icon: Icons.card_travel, text: AppLocalizations.of(context)!.products,index: 2, onTap: () {onNavigationItemSelect!(2);  }),
-            _createDrawerItem(context: context,icon: Icons.account_balance_wallet, text: AppLocalizations.of(context)!.orders,index: 3, onTap: () {onNavigationItemSelect!(3);  }),
-            _createDrawerItem(context: context,icon: Icons.settings, text: AppLocalizations.of(context)!.changeLanguage,index: 4, onTap: () {onNavigationItemSelect!(4);  }),
-           // _createDrawerItem(icon: Icons.logout, text: AppLocalizations.of(context)!.logout,index: 4, onTap: () {onNavigationItemSelect!(4);  }),
-            // ListTile(title: Text('0.0.1'), onTap: () {},),
-          ],
-        ),
+      // Painted by the drawer's own Material: a coloured Container here would
+      // cover the ListTile ink splashes (Flutter 3.44 asserts on that).
+      backgroundColor: AppColors.primary,
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          _createHeader(context,false),
+          Divider(color: Colors.white,),
+          _createDrawerItem(context: context, icon: Icons.person, text: AppLocalizations.of(context)!.sellerProfile,index: 1, onTap: () {onNavigationItemSelect!(1);  }),
+          _createDrawerItem(context: context, icon: Icons.card_travel, text: AppLocalizations.of(context)!.products,index: 2, onTap: () {onNavigationItemSelect!(2);  }),
+          _createDrawerItem(context: context,icon: Icons.account_balance_wallet, text: AppLocalizations.of(context)!.orders,index: 3, onTap: () {onNavigationItemSelect!(3);  }),
+          _createDrawerItem(context: context,icon: Icons.settings, text: AppLocalizations.of(context)!.changeLanguage,index: 4, onTap: () {onNavigationItemSelect!(4);  }),
+         // _createDrawerItem(icon: Icons.logout, text: AppLocalizations.of(context)!.logout,index: 4, onTap: () {onNavigationItemSelect!(4);  }),
+          // ListTile(title: Text('0.0.1'), onTap: () {},),
+        ],
       ),
     );
   }
@@ -101,7 +101,8 @@ class AppDrawer extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 child: InkWell(
                   onTap: (){
-                    onNavigationItemSelect!(0);
+                    // The dashboard builds AppDrawer() without a callback.
+                    onNavigationItemSelect?.call(0);
                   },
                   child: Column(children: <Widget>[
                     Padding(
