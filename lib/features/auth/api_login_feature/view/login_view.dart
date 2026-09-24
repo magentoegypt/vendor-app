@@ -22,7 +22,15 @@ import '../bloc/login_bloc.dart';
 class SignInView extends StatefulWidget {
   const SignInView({
     Key? key,
+    this.sessionExpired = false,
   }) : super(key: key);
+
+  /// Set when an API call was rejected with 401 and sent the vendor here.
+  final bool sessionExpired;
+
+  /// True while the login screen is on screen, so several requests failing
+  /// with 401 at once only navigate here once.
+  static bool isShown = false;
 
   @override
   State<SignInView> createState() => _SignInViewState();
@@ -41,6 +49,14 @@ class _SignInViewState extends State<SignInView> {
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
     super.initState();
+    SignInView.isShown = true;
+    if (widget.sessionExpired) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Tools.showSnackBar(ScaffoldMessenger.of(context), AppLocalizations.of(context)!.sessionExpiredMessage);
+        }
+      });
+    }
     _sharedPrefKeys.setIntData(key: initScreenPrefKey, id: 0);
     _sharedPrefKeys.setIntData(key: isFirstLaunchPrefKey, id: 1);
     countryCode = CountryCode(
@@ -71,6 +87,7 @@ class _SignInViewState extends State<SignInView> {
 
   @override
   void dispose() {
+    SignInView.isShown = false;
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -152,6 +169,13 @@ class _SignInViewState extends State<SignInView> {
 
                 if (state is LoginError) {
                   Tools.showSnackBar(ScaffoldMessenger.of(context), state.errorMessage);
+                } else if (state is VendorAccountError) {
+                  // A 403 names the reason (pending approval, disabled, expired,
+                  // not a seller); anything else gets the generic text and status.
+                  final reason = state.statusCode == 403 ? state.message ?? '' : '';
+                  Tools.showSnackBar(ScaffoldMessenger.of(context), reason.isNotEmpty
+                      ? reason
+                      : '${AppLocalizations.of(context)!.vendorAccountUnavailable} (${state.statusCode})');
                 }
               },
               child:Padding(
@@ -297,7 +321,7 @@ class _SignInViewState extends State<SignInView> {
                             );
                           }else{
                             Map<String, dynamic> loginMap = {
-                              "username": _emailController.text,
+                              "username": _emailController.text.trim(),
                               "password": _passwordController.text.trim(),
                             };
                             /// init Login event

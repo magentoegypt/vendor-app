@@ -52,3 +52,16 @@ class LoginError extends LoginState {
   @override
   List<Object> get props => [errorMessage];
 }
+
+/// Credentials were accepted but the vendor account could not be loaded.
+class VendorAccountError extends LoginState {
+  final int statusCode;
+
+  /// The server's reason, sent with 403 for pending, disabled, expired and
+  /// non-seller accounts.
+  final String? message;
+  VendorAccountError({required this.statusCode, this.message});
+
+  @override
+  List<Object> get props => [statusCode, message ?? ''];
+}

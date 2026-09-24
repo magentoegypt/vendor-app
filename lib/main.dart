@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/config/app_constants.dart';
 import 'core/config/colors.dart';
 import 'core/config/locator.dart';
+import 'core/helper/api_response_helper.dart';
 import 'core/helper/shared_preferences_helpers.dart';
 import 'core/ui/setup_snackbar_ui.dart';
 import 'features/Orders/OrderList/bloc/orders_bloc.dart';
@@ -19,6 +20,7 @@ import 'features/Products/CreateEditProduct/bloc/create_edit_product_bloc.dart';
 import 'features/Products/CreateEditProduct/data/create_edit_product_repository.dart';
 import 'features/auth/api_login_feature/bloc/login_bloc.dart';
 import 'features/auth/api_login_feature/data/login_repository.dart';
+import 'features/auth/api_login_feature/view/login_view.dart';
 import 'features/auth/register_feature/bloc/register_bloc.dart';
 import 'features/auth/register_feature/data/register_repository.dart';
 import 'features/auth/reset_password_feature/bloc/reset_password_bloc.dart';
@@ -43,8 +45,22 @@ void main() async {
   setupLocator();
   ///  calling dependencies setting for get_it
   setupSnackbarUi();
+  onSessionExpired = _openLoginAfterSessionExpired;
 
   runApp(const MainApp());
+}
+
+/// Opens the login screen once when a stored token is rejected (401), even if
+/// several requests fail at the same time.
+void _openLoginAfterSessionExpired() {
+  final navigator = navigatorKey.currentState;
+  if (navigator == null || SignInView.isShown) return;
+  SignInView.isShown = true;
+  navigator.pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (context) => const SignInView(sessionExpired: true),
+      ),
+      (route) => false);
 }
 
 class MainApp extends StatefulWidget {

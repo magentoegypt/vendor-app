@@ -1,3 +1,4 @@
+import '../../../../core/utils/json_parser.dart';
 
 class MobileOTPModel {
   String? status;
@@ -7,9 +8,9 @@ class MobileOTPModel {
   MobileOTPModel({this.status, this.message, this.token});
 
   MobileOTPModel.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
-    message = json['message'];
-    token = json['token'];
+    status = JsonParser.toStr(json['status']);
+    message = JsonParser.toStr(json['message']);
+    token = JsonParser.toStr(json['token']);
   }
 
   Map<String, dynamic> toJson() {

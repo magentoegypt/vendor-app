@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:multi_vendor/core/config/app_constants.dart';
-import 'package:multi_vendor/core/config/locator.dart';
 import '../../../../core/config/app_exceptions.dart';
+import '../../../../core/config/extensions.dart';
 import '../../../../core/config/logger.dart';
 import '../../../../core/helper/api_response_helper.dart';
 import '../../../../core/helper/api_url_helpers.dart';
+import '../../../../core/utils/json_parser.dart';
 import '../../../../core/values/string_values.dart';
-import '../../../../main.dart';
+import '../../../home/data/UserModel.dart';
 
 class LoginApiService {
   final http.Client _httpClient;
@@ -16,6 +16,7 @@ class LoginApiService {
   LoginApiService({http.Client? httpClient})
       : _httpClient = httpClient ?? http.Client();
 
+  /// Exchanges the vendor's email and password for a customer token.
   Future<String> postUserLoginData({
     required Map<String, dynamic> requestValueMap,
   }) async {
@@ -23,20 +24,44 @@ class LoginApiService {
       requestValueMap: requestValueMap,
     );
 
+    final token = JsonParser.toStr(responseBody);
+    if (token == null || token.isEmpty) {
+      throw JsonDeserializationException(['Login response has no token']);
+    }
+    return token;
+  }
+
+  /// Loads the vendor account behind [token]. Both login paths call this
+  /// before storing the token, so a token the vendor API rejects is reported
+  /// on the login screen instead of bouncing back from the dashboard.
+  Future<UserModel> getVendor({required String token}) async {
+    final http.Response response;
     try {
-      //
-      return responseBody;
-      //
+      response = await _httpClient.get(
+        Uri.parse(vendorDetailsApi),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          "Authorization": "Bearer $token"
+        },
+      );
+    } on SocketException {
+      throw HttpException(StringValues.no_internet);
+    }
+
+    'url:$vendorDetailsApi\nres:${response.statusCode}:${response.body}'.log();
+    if (response.statusCode != 200) {
+      throw VendorAccountException(
+          response.statusCode, magentoErrorText(response.body));
+    }
+
+    try {
+      return UserModel.fromJson(json.decode(response.body));
     } catch (exception, stackTrace) {
-      //
       printLog(
         classFileName: 'LoginApiService',
         logType: LoggerType.e,
         message: '$exception\n$stackTrace',
       );
-
-      //
-      //await Sentry.captureException(exception, stackTrace: stackTrace);
       throw JsonDeserializationException(['$exception']);
     }
   }
@@ -54,51 +79,19 @@ class LoginApiService {
         body: json.encode(requestValueMap),
       );
 
-      if(response.statusCode == 200) {
-        final lognresponse = await _httpClient.get(
-          Uri.parse(vendorDetailsApi),
-          headers: <String, String>{
-            'Content-Type': 'application/json',
-            "Authorization": "Bearer ${json.decode(response.body) ?? ""}"
-          },
-        );
-        if(lognresponse.statusCode != 200){
-          if(selectedLanguage == "ar"){
-            throw HttpException('البريد الإلكتروني أو كلمة المرور غير صحيحة');
-          }else{
-            throw HttpException('Incorrect email or password');
-          }
-        }else{
-          return apiResponseHelper(
-            response: response,
-            className: 'LoginApiService',
-            apiUrl: userLoginApi,
-            requestValue: '$requestValueMap',
-            token: "",
-          );
-        }
-      }
-
-      //
       return apiResponseHelper(
         response: response,
         className: 'LoginApiService',
         apiUrl: userLoginApi,
-        requestValue: '$requestValueMap',
+        // Log the username only: the request map also carries the password.
+        requestValue: '${requestValueMap['username']}',
         token: "",
       );
-      //
     } on SocketException {
-      //
       throw HttpException(StringValues.no_internet);
-      //
     } catch (exception) {
-      //
       //await Sentry.captureException(exception, stackTrace: stackTrace);
-
       throw HttpException('$exception');
-      //
-
     }
   }
 }

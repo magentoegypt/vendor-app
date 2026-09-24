@@ -47,3 +47,15 @@ class ErrorEmptyResponse extends AppException {
   ErrorEmptyResponse([dynamic message])
       : super(message, 'ErrorEmptyResponse: ');
 }
+
+/// Thrown when login succeeded but the vendor account behind the token could
+/// not be loaded (not a vendor, pending approval, or the vendor API failed).
+class VendorAccountException extends AppException {
+  VendorAccountException(this.statusCode, [this.serverMessage])
+      : super(serverMessage ?? statusCode, 'VendorAccountException: ');
+
+  final int statusCode;
+
+  /// The server's reason, e.g. "Your seller account is pending approval".
+  final String? serverMessage;
+}

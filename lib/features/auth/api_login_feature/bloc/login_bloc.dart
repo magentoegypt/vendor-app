@@ -1,9 +1,13 @@
+import 'dart:convert';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../core/config/app_exceptions.dart';
 import '../../../../core/config/pref_keys.dart';
 import '../../../../core/helper/shared_preferences_helpers.dart';
+import '../../../home/data/UserModel.dart';
 import '../../forgot_password_feature/data/MobileOTPModel.dart';
 import '../data/login_repository.dart';
 part 'login_event.dart';
@@ -24,25 +28,14 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     try {
       // emit the loading state
       emit(LoginLoading());
-      final userInfo = await repository.requestUserLogin(
+      final userToken = await repository.requestUserLogin(
         requestValueMap: event.requestValueMap,
       );
-
-      // Save Token in Shared Preferences
-      _sharedPrefKeys.setStringData(
-          key: authTokenPrefKey, text: userInfo);
-      _sharedPrefKeys.setIntData(
-          key: initScreenPrefKey, id: 1);
-      //
-      // // Save Email in Shared Preferences
-      // _sharedPrefKeys.setStringData(
-      //     key: userEmailPrefKey,
-      //     text: '${userInfo.body?.readableCustomer?.emailAddress ?? ""}');
-      //
-      // // Save Email in Shared Preferences
-      // _sharedPrefKeys.setIntData(
-      //     key: userIDPrefKey, id: userInfo.body?.id ?? 0);
-      emit(LoginLoaded(userToken: userInfo));
+      final vendor = await repository.requestVendor(token: userToken);
+      await _saveSession(userToken, vendor);
+      emit(LoginLoaded(userToken: userToken));
+    } on VendorAccountException catch (e) {
+      emit(VendorAccountError(statusCode: e.statusCode, message: e.serverMessage));
     } on Exception catch (e) {
       emit(LoginError(errorMessage: e.toString()));
     }
@@ -71,14 +64,25 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         requestValueMap: event.requestValueMap,
       );
       if(mobileOTPModel.status == "success"){
-        _sharedPrefKeys.setStringData(
-            key: authTokenPrefKey, text: mobileOTPModel.token ?? "");
-        _sharedPrefKeys.setIntData(
-            key: initScreenPrefKey, id: 1);
+        // Same check as the email login: the OTP token must open the vendor
+        // account, otherwise the dashboard's first call bounces back here.
+        final userToken = mobileOTPModel.token ?? "";
+        final vendor = await repository.requestVendor(token: userToken);
+        await _saveSession(userToken, vendor);
       }
       emit(VerifyMobileOTPLoaded(mobileOTPModel: mobileOTPModel));
+    } on VendorAccountException catch (e) {
+      emit(VendorAccountError(statusCode: e.statusCode, message: e.serverMessage));
     } on Exception catch (e) {
       emit(LoginError(errorMessage: e.toString()));
     }
+  }
+
+  /// Awaited so the dashboard never reads the token before it is stored.
+  Future<void> _saveSession(String userToken, UserModel vendor) async {
+    await _sharedPrefKeys.setStringData(key: authTokenPrefKey, text: userToken);
+    await _sharedPrefKeys.setStringData(
+        key: userPrefKey, text: jsonEncode(vendor.toJson()));
+    await _sharedPrefKeys.setIntData(key: initScreenPrefKey, id: 1);
   }
 }
