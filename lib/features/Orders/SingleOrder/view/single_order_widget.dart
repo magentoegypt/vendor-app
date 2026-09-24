@@ -35,7 +35,7 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
   final SharedPreferencesHelpers _sharedPrefKeys = SharedPreferencesHelpers();
   OrderModel? orderModel;
   final fontSize = 16.0;
-  DateTime utcDate = DateTime.now();
+  DateTime? orderDate;
   @override
   void initState() {
     super.initState();
@@ -67,7 +67,7 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                    if (state is SingleOrderLoaded) {
                     setState(() {
                       orderModel = state.orderModel;
-                      utcDate = DateTime.parse('${orderModel?.createdAt}Z');
+                      orderDate = _parseUtcDate(orderModel?.createdAt);
                     });
                   }
                   if (state is OrderError) {
@@ -96,9 +96,8 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                             children: [
                               _buildSectionHeader(AppLocalizations.of(context)!.orderAccountInformation),
                              // _buildRow('Order #', '000000017 (The order confirmation email is not sent)'),
-                              _buildRow(AppLocalizations.of(context)!.orderNo, '${orderModel?.incrementId}'),
-                        // Parse the UTC string into a DateTime object
-                              _buildRow(AppLocalizations.of(context)!.orderDate, DateFormat('d MMM yyyy, hh:mm:ss a').format(utcDate.toLocal())),
+                              _buildRow(AppLocalizations.of(context)!.orderNo, orderModel?.incrementId ?? ''),
+                              _buildRow(AppLocalizations.of(context)!.orderDate, orderDate == null ? '' : DateFormat('d MMM yyyy, hh:mm:ss a').format(orderDate!.toLocal())),
                               _buildRow(AppLocalizations.of(context)!.orderstatus, Tools.getOrderStatus(context,orderModel?.status ?? "")),
                               // _buildRow('Purchased From', 'Main Website Store - Arabic'),
                               Container(
@@ -107,8 +106,8 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                                 width: double.infinity, // Stretch the line across the width
                                 color: Colors.black, // Set your desired color
                               ),
-                              _buildRow(AppLocalizations.of(context)!.customerName, '${orderModel?.customerName}'),
-                              _buildRow(AppLocalizations.of(context)!.email, '${orderModel?.customerEmail}'),
+                              _buildRow(AppLocalizations.of(context)!.customerName, orderModel?.customerName ?? ''),
+                              _buildRow(AppLocalizations.of(context)!.email, orderModel?.customerEmail ?? ''),
                             //  _buildRow('Customer Group', '${orderModel?.customerGroup}'),
                             ],
                           ),
@@ -151,7 +150,7 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _buildSectionHeader(AppLocalizations.of(context)!.paymentShippingMethod),
-                                  _buildRow(AppLocalizations.of(context)!.paymentInformation, '${orderModel?.payment?.additionalInformation?.first}'),
+                                  _buildRow(AppLocalizations.of(context)!.paymentInformation, _paymentInformation()),
                                   _buildRow('', AppLocalizations.of(context)!.orderwasplacedusingEGP),
                                   _buildRow(AppLocalizations.of(context)!.shippingHandlingInformation, AppLocalizations.of(context)!.noShippinginformationavailable),
                                 ],
@@ -189,19 +188,19 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _buildSectionHeader(AppLocalizations.of(context)!.orderTotal),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.subtotal, getStringWithCurrencyCode((orderModel?.baseSubtotal ?? 0).toString())),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.shippingHandling, getStringWithCurrencyCode((orderModel?.baseShippingAmount ?? 0).toString())),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.subtotal, getStringWithCurrencyCode(orderModel?.baseSubtotal)),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.shippingHandling, getStringWithCurrencyCode(orderModel?.baseShippingAmount)),
                                   Container(
                                     margin: EdgeInsets.symmetric(vertical: 7.0),
                                     height: 1, // Set the height to 1 pixel
                                     width: double.infinity, // Stretch the line across the width
                                     color: Colors.black, // Set your desired color
                                   ),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.grandTotal, getStringWithCurrencyCode((orderModel?.baseGrandTotal ?? 0).toString())),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.totalPaid,getStringWithCurrencyCode(((orderModel?.baseTotalPaid ?? 0)).toString())),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.totalRefunded,getStringWithCurrencyCode((orderModel?.baseTotalRefunded ?? 0).toString())),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.marketplaceCommission, getStringWithCurrencyCode((orderModel?.commission ?? 0).toString())),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.totalDue, getStringWithCurrencyCode((orderModel?.baseTotalDue ?? 0).toString())),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.grandTotal, getStringWithCurrencyCode(orderModel?.baseGrandTotal)),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.totalPaid, getStringWithCurrencyCode(orderModel?.baseTotalPaid)),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.totalRefunded, getStringWithCurrencyCode(orderModel?.baseTotalRefunded)),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.marketplaceCommission, getStringWithCurrencyCode(orderModel?.commission)),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.totalDue, getStringWithCurrencyCode(orderModel?.baseTotalDue)),
                                 ],
                               ),
                             ),
@@ -329,17 +328,17 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildRow(AppLocalizations.of(context)!.product, '${item.name}'),
+          _buildRow(AppLocalizations.of(context)!.product, item.name ?? ""),
           _buildRow(AppLocalizations.of(context)!.sku, item.sku ?? ""),
           _buildRow(AppLocalizations.of(context)!.itemStatus, item.extensionAttributes?.status ?? ""),
-          _buildRow(AppLocalizations.of(context)!.originalPrice, getStringWithCurrencyCode('${item.originalPrice}')),
-          _buildRow(AppLocalizations.of(context)!.price, getStringWithCurrencyCode('${item.price}')),
-          _buildRow(AppLocalizations.of(context)!.qty, '${item.qtyOrdered}'),
-          _buildRow(AppLocalizations.of(context)!.subtotal, getStringWithCurrencyCode('${item.rowTotalInclTax}')),
-          _buildRow(AppLocalizations.of(context)!.taxAmount, getStringWithCurrencyCode('${item.taxAmount}')),
-          _buildRow(AppLocalizations.of(context)!.taxPercent, '${item.taxPercent}%'),
-          _buildRow(AppLocalizations.of(context)!.discountAmount, getStringWithCurrencyCode('${item.discountAmount}')),
-          _buildRow(AppLocalizations.of(context)!.rowTotal, getStringWithCurrencyCode('${item.rowTotal}')),
+          _buildRow(AppLocalizations.of(context)!.originalPrice, getStringWithCurrencyCode(item.originalPrice)),
+          _buildRow(AppLocalizations.of(context)!.price, getStringWithCurrencyCode(item.price)),
+          _buildRow(AppLocalizations.of(context)!.qty, Tools.formatQty(item.qtyOrdered ?? 0)),
+          _buildRow(AppLocalizations.of(context)!.subtotal, getStringWithCurrencyCode(item.rowTotalInclTax)),
+          _buildRow(AppLocalizations.of(context)!.taxAmount, getStringWithCurrencyCode(item.taxAmount)),
+          _buildRow(AppLocalizations.of(context)!.taxPercent, '${Tools.formatQty(item.taxPercent ?? 0)}%'),
+          _buildRow(AppLocalizations.of(context)!.discountAmount, getStringWithCurrencyCode(item.discountAmount)),
+          _buildRow(AppLocalizations.of(context)!.rowTotal, getStringWithCurrencyCode(item.rowTotal)),
           Container(
             margin: EdgeInsets.symmetric(vertical: 7.0),
             height: 1, // Set the height to 1 pixel
@@ -361,18 +360,31 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 4),
-        Text('${billingAddress.firstname} ${billingAddress.lastname}'),
-        Text('${billingAddress.street?.first}'),
-        Text('${billingAddress.postcode}'),
-        Text('${billingAddress.city}'),
-        Text('T: ${billingAddress.telephone}'),
+        Text([billingAddress.firstname, billingAddress.lastname].whereType<String>().join(' ')),
+        Text(billingAddress.street?.join(', ') ?? ''),
+        Text(billingAddress.postcode ?? ''),
+        Text(billingAddress.city ?? ''),
+        Text('T: ${billingAddress.telephone ?? ''}'),
         SizedBox(height: 8),
       ],
     );
   }
 
-  String getStringWithCurrencyCode(String title){
+  String getStringWithCurrencyCode(dynamic amount){
+   final title = Tools.formatPrice(amount ?? 0);
    return selectedLanguage == 'ar' ? '$title ${AppLocalizations.of(context)!.currencyEGP}':'${AppLocalizations.of(context)!.currencyEGP}$title';
+  }
+
+  String _paymentInformation() {
+    final info = orderModel?.payment?.additionalInformation;
+    if (info != null && info.isNotEmpty) return info.first;
+    return orderModel?.paymentMethod ?? '';
+  }
+
+  /// Magento sends created_at as UTC without a zone, e.g. "2026-09-13 12:47:22".
+  DateTime? _parseUtcDate(String? value) {
+    if (value == null || value.isEmpty) return null;
+    return DateTime.tryParse('${value}Z') ?? DateTime.tryParse(value);
   }
 
 }

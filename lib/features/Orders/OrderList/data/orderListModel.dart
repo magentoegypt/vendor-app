@@ -1,3 +1,5 @@
+import '../../../../core/utils/json_parser.dart';
+
 class OrderListModel {
   List<OrderModel>? items;
   SearchCriteria? searchCriteria;
@@ -6,16 +8,9 @@ class OrderListModel {
   OrderListModel({this.items, this.searchCriteria, this.totalCount});
 
   OrderListModel.fromJson(Map<String, dynamic> json) {
-    if (json['items'] != null) {
-      items = <OrderModel>[];
-      json['items'].forEach((v) {
-        items!.add(new OrderModel.fromJson(v));
-      });
-    }
-    searchCriteria = json['search_criteria'] != null
-        ? new SearchCriteria.fromJson(json['search_criteria'])
-        : null;
-    totalCount = json['total_count'];
+    items = JsonParser.toList(json['items'], OrderModel.fromJson);
+    searchCriteria = JsonParser.toObject(json['search_criteria'], SearchCriteria.fromJson);
+    totalCount = JsonParser.toInt(json['total_count']);
   }
 
   Map<String, dynamic> toJson() {
@@ -34,30 +29,30 @@ class OrderModel {
   int? vendorId;
   int? orderId;
   String? status;
-  int? baseDiscountAmount;
-  int? baseGrandTotal;
-  int? baseShippingAmount;
-  int? baseShippingTaxAmount;
-  int? baseSubtotal;
-  int? baseTaxAmount;
-  int? discountAmount;
-  int? grandTotal;
-  int? shippingAmount;
-  int? shippingTaxAmount;
-  int? subtotal;
-  int? taxAmount;
-  int? totalQtyOrdered;
-  int? taxInvoiced;
-  int? baseTaxInvoiced;
-  int? subtotalInclTax;
-  int? baseSubtotalInclTax;
-  int? weight;
+  num? baseDiscountAmount;
+  num? baseGrandTotal;
+  num? baseShippingAmount;
+  num? baseShippingTaxAmount;
+  num? baseSubtotal;
+  num? baseTaxAmount;
+  num? discountAmount;
+  num? grandTotal;
+  num? shippingAmount;
+  num? shippingTaxAmount;
+  num? subtotal;
+  num? taxAmount;
+  num? totalQtyOrdered;
+  num? taxInvoiced;
+  num? baseTaxInvoiced;
+  num? subtotalInclTax;
+  num? baseSubtotalInclTax;
+  num? weight;
   String? createdAt;
   String? updatedAt;
-  int? shippingInclTax;
-  int? baseShippingInclTax;
-  int? totalDue;
-  int? baseTotalDue;
+  num? shippingInclTax;
+  num? baseShippingInclTax;
+  num? totalDue;
+  num? baseTotalDue;
   String? billingName;
   String? shippingName;
   BillingAddress? billingAddress;
@@ -126,63 +121,53 @@ class OrderModel {
         this.incrementId});
 
   OrderModel.fromJson(Map<String, dynamic> json) {
-    entityId = json['entity_id'];
-    vendorId = json['vendor_id'];
-    orderId = json['order_id'];
-    status = json['status'];
-    baseDiscountAmount = json['base_discount_amount'];
-    baseGrandTotal = json['base_grand_total'];
-    baseShippingAmount = json['base_shipping_amount'];
-    baseShippingTaxAmount = json['base_shipping_tax_amount'];
-    baseSubtotal = json['base_subtotal'];
-    baseTaxAmount = json['base_tax_amount'];
-    discountAmount = json['discount_amount'];
-    grandTotal = json['grand_total'];
-    shippingAmount = json['shipping_amount'];
-    shippingTaxAmount = json['shipping_tax_amount'];
-    subtotal = json['subtotal'];
-    taxAmount = json['tax_amount'];
-    totalQtyOrdered = json['total_qty_ordered'];
-    taxInvoiced = json['tax_invoiced'];
-    baseTaxInvoiced = json['base_tax_invoiced'];
-    subtotalInclTax = json['subtotal_incl_tax'];
-    baseSubtotalInclTax = json['base_subtotal_incl_tax'];
-    weight = json['weight'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    shippingInclTax = json['shipping_incl_tax'];
-    baseShippingInclTax = json['base_shipping_incl_tax'];
-    totalDue = json['total_due'];
-    baseTotalDue = json['base_total_due'];
+    entityId = JsonParser.toInt(json['entity_id']);
+    vendorId = JsonParser.toInt(json['vendor_id']);
+    orderId = JsonParser.toInt(json['order_id']);
+    status = JsonParser.toStr(json['status']);
+    baseDiscountAmount = JsonParser.toNum(json['base_discount_amount']);
+    baseGrandTotal = JsonParser.toNum(json['base_grand_total']);
+    baseShippingAmount = JsonParser.toNum(json['base_shipping_amount']);
+    baseShippingTaxAmount = JsonParser.toNum(json['base_shipping_tax_amount']);
+    baseSubtotal = JsonParser.toNum(json['base_subtotal']);
+    baseTaxAmount = JsonParser.toNum(json['base_tax_amount']);
+    discountAmount = JsonParser.toNum(json['discount_amount']);
+    grandTotal = JsonParser.toNum(json['grand_total']);
+    shippingAmount = JsonParser.toNum(json['shipping_amount']);
+    shippingTaxAmount = JsonParser.toNum(json['shipping_tax_amount']);
+    subtotal = JsonParser.toNum(json['subtotal']);
+    taxAmount = JsonParser.toNum(json['tax_amount']);
+    totalQtyOrdered = JsonParser.toNum(json['total_qty_ordered']);
+    taxInvoiced = JsonParser.toNum(json['tax_invoiced']);
+    baseTaxInvoiced = JsonParser.toNum(json['base_tax_invoiced']);
+    subtotalInclTax = JsonParser.toNum(json['subtotal_incl_tax']);
+    baseSubtotalInclTax = JsonParser.toNum(json['base_subtotal_incl_tax']);
+    weight = JsonParser.toNum(json['weight']);
+    createdAt = JsonParser.toStr(json['created_at']);
+    updatedAt = JsonParser.toStr(json['updated_at']);
+    shippingInclTax = JsonParser.toNum(json['shipping_incl_tax']);
+    baseShippingInclTax = JsonParser.toNum(json['base_shipping_incl_tax']);
+    totalDue = JsonParser.toNum(json['total_due']);
+    baseTotalDue = JsonParser.toNum(json['base_total_due']);
 
-    billingName = json['billing_name'];
-    shippingName = json['shipping_name'];
-    billingAddress = json['billing_address'] != null
-        ? new BillingAddress.fromJson(json['billing_address'])
-        : null;
-    shippingAddress = json['shipping_address'] != null
-        ? new BillingAddress.fromJson(json['shipping_address'])
-        : null;
-    customerEmail = json['customer_email'];
-    customerGroup = json['customer_group'];
-    shippingAndHandling = json['shipping_and_handling'];
-    customerName = json['customer_name'];
-    paymentMethod = json['payment_method'];
-    baseCurrencyCode = json['base_currency_code'];
-   orderCurrencyCode = json['order_currency_code'];
-    if (json['items'] != null) {
-      items = <Product>[];
-      json['items'].forEach((v) {
-        items!.add(new Product.fromJson(v));
-      });
-    }
-    payment =
-    json['payment'] != null ? new Payment.fromJson(json['payment']) : null;
-    canCancel = json['can_cancel'];
-    canInvoice = json['can_invoice'];
-    canShip = json['can_ship'];
-    canCreditMemo = json['can_credit_memo'];
-    incrementId = json['increment_id'];
+    billingName = JsonParser.toStr(json['billing_name']);
+    shippingName = JsonParser.toStr(json['shipping_name']);
+    billingAddress = JsonParser.toObject(json['billing_address'], BillingAddress.fromJson);
+    shippingAddress = JsonParser.toObject(json['shipping_address'], BillingAddress.fromJson);
+    customerEmail = JsonParser.toStr(json['customer_email']);
+    customerGroup = JsonParser.toStr(json['customer_group']);
+    shippingAndHandling = JsonParser.toStr(json['shipping_and_handling']);
+    customerName = JsonParser.toStr(json['customer_name']);
+    paymentMethod = JsonParser.toStr(json['payment_method']);
+    baseCurrencyCode = JsonParser.toStr(json['base_currency_code']);
+   orderCurrencyCode = JsonParser.toStr(json['order_currency_code']);
+    items = JsonParser.toList(json['items'], Product.fromJson);
+    payment = JsonParser.toObject(json['payment'], Payment.fromJson);
+    canCancel = JsonParser.toBool(json['can_cancel']);
+    canInvoice = JsonParser.toBool(json['can_invoice']);
+    canShip = JsonParser.toBool(json['can_ship']);
+    canCreditMemo = JsonParser.toBool(json['can_credit_memo']);
+    incrementId = JsonParser.toStr(json['increment_id']);
   }
 
   Map<String, dynamic> toJson() {
@@ -280,21 +265,21 @@ class BillingAddress {
         this.telephone});
 
   BillingAddress.fromJson(Map<String, dynamic> json) {
-    addressType = json['address_type'];
-    city = json['city'];
-    company = json['company'];
-    countryId = json['country_id'];
-    email = json['email'];
-    entityId = json['entity_id'];
-    firstname = json['firstname'];
-    lastname = json['lastname'];
-    parentId = json['parent_id'];
-    postcode = json['postcode'];
-    region = json['region'];
-    regionCode = json['region_code'];
-    regionId = json['region_id'];
-    street = json['street'].cast<String>();
-    telephone = json['telephone'];
+    addressType = JsonParser.toStr(json['address_type']);
+    city = JsonParser.toStr(json['city']);
+    company = JsonParser.toStr(json['company']);
+    countryId = JsonParser.toStr(json['country_id']);
+    email = JsonParser.toStr(json['email']);
+    entityId = JsonParser.toInt(json['entity_id']);
+    firstname = JsonParser.toStr(json['firstname']);
+    lastname = JsonParser.toStr(json['lastname']);
+    parentId = JsonParser.toInt(json['parent_id']);
+    postcode = JsonParser.toStr(json['postcode']);
+    region = JsonParser.toStr(json['region']);
+    regionCode = JsonParser.toStr(json['region_code']);
+    regionId = JsonParser.toInt(json['region_id']);
+    street = JsonParser.toStringList(json['street']);
+    telephone = JsonParser.toStr(json['telephone']);
   }
 
   Map<String, dynamic> toJson() {
@@ -427,9 +412,9 @@ class Product {
     //     print('value is $value ');
     //   }
     // });
-    itemOptions = json['item_options'];
+    itemOptions = JsonParser.toStr(json['item_options']);
     amountRefunded = json['amount_refunded'];
-    appliedRuleIds = json['applied_rule_ids'];
+    appliedRuleIds = JsonParser.toStr(json['applied_rule_ids']);
     baseAmountRefunded = json['base_amount_refunded'];
     baseDiscountAmount = json['base_discount_amount'];
     baseDiscountInvoiced = json['base_discount_invoiced'];
@@ -442,7 +427,7 @@ class Product {
     baseRowTotalInclTax = json['base_row_total_incl_tax'];
     baseTaxAmount = json['base_tax_amount'];
     baseTaxInvoiced = json['base_tax_invoiced'];
-    createdAt = json['created_at'];
+    createdAt = JsonParser.toStr(json['created_at']);
     discountAmount = json['discount_amount'];
     discountInvoiced = json['discount_invoiced'];
     discountPercent = json['discount_percent'];
@@ -451,14 +436,14 @@ class Product {
     isQtyDecimal = json['is_qty_decimal'];
     isVirtual = json['is_virtual'];
     itemId = json['item_id'];
-    name = json['name'];
+    name = JsonParser.toStr(json['name']);
     noDiscount = json['no_discount'];
     orderId = json['order_id'];
     originalPrice = json['original_price'];
     price = json['price'];
     priceInclTax = json['price_incl_tax'];
     productId = json['product_id'];
-    productType = json['product_type'];
+    productType = JsonParser.toStr(json['product_type']);
     qtyCanceled = json['qty_canceled'];
     qtyInvoiced = json['qty_invoiced'];
     qtyOrdered = json['qty_ordered'];
@@ -469,12 +454,12 @@ class Product {
     rowTotal = json['row_total'];
     rowTotalInclTax = json['row_total_incl_tax'];
     rowWeight = json['row_weight'];
-    sku = json['sku'];
+    sku = JsonParser.toStr(json['sku']);
     storeId = json['store_id'];
     taxAmount = json['tax_amount'];
     taxInvoiced = json['tax_invoiced'];
     taxPercent = json['tax_percent'];
-    updatedAt = json['updated_at'];
+    updatedAt = JsonParser.toStr(json['updated_at']);
     weight = json['weight'];
   }
 
@@ -538,9 +523,9 @@ class Product {
 class Payment {
   String? accountStatus;
   List<String>? additionalInformation;
-  int? amountOrdered;
-  int? baseAmountOrdered;
-  int? baseShippingAmount;
+  num? amountOrdered;
+  num? baseAmountOrdered;
+  num? baseShippingAmount;
   String? ccExpYear;
   String? ccLast4;
   String? ccSsStartMonth;
@@ -548,7 +533,7 @@ class Payment {
   int? entityId;
   String? method;
   int? parentId;
-  int? shippingAmount;
+  num? shippingAmount;
 
   Payment(
       {this.accountStatus,
@@ -566,19 +551,19 @@ class Payment {
         this.shippingAmount});
 
   Payment.fromJson(Map<String, dynamic> json) {
-    accountStatus = json['account_status'];
-    additionalInformation = json['additional_information'].cast<String>();
-    amountOrdered = json['amount_ordered'];
-    baseAmountOrdered = json['base_amount_ordered'];
-    baseShippingAmount = json['base_shipping_amount'];
-    ccExpYear = json['cc_exp_year'];
-    ccLast4 = json['cc_last4'];
-    ccSsStartMonth = json['cc_ss_start_month'];
-    ccSsStartYear = json['cc_ss_start_year'];
-    entityId = json['entity_id'];
-    method = json['method'];
-    parentId = json['parent_id'];
-    shippingAmount = json['shipping_amount'];
+    accountStatus = JsonParser.toStr(json['account_status']);
+    additionalInformation = JsonParser.toStringList(json['additional_information']);
+    amountOrdered = JsonParser.toNum(json['amount_ordered']);
+    baseAmountOrdered = JsonParser.toNum(json['base_amount_ordered']);
+    baseShippingAmount = JsonParser.toNum(json['base_shipping_amount']);
+    ccExpYear = JsonParser.toStr(json['cc_exp_year']);
+    ccLast4 = JsonParser.toStr(json['cc_last4']);
+    ccSsStartMonth = JsonParser.toStr(json['cc_ss_start_month']);
+    ccSsStartYear = JsonParser.toStr(json['cc_ss_start_year']);
+    entityId = JsonParser.toInt(json['entity_id']);
+    method = JsonParser.toStr(json['method']);
+    parentId = JsonParser.toInt(json['parent_id']);
+    shippingAmount = JsonParser.toNum(json['shipping_amount']);
   }
 
   Map<String, dynamic> toJson() {
@@ -608,7 +593,7 @@ class SearchCriteria {
 
   SearchCriteria.fromJson(Map<String, dynamic> json) {
 
-    pageSize = json['page_size'];
+    pageSize = JsonParser.toInt(json['page_size']);
   }
 
 }

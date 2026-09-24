@@ -1,3 +1,5 @@
+import '../../../core/utils/json_parser.dart';
+
 class DashboarModel {
   String? creditAmount;
   String? lifetimeSales;
@@ -17,28 +19,13 @@ class DashboarModel {
         this.creditChartData});
 
   DashboarModel.fromJson(Map<String, dynamic> json) {
-    creditAmount = json['credit_amount'];
-    lifetimeSales = json['lifetime_sales'];
-    averageOrders = json['average_orders'];
-    totalProducts = json['total_products'];
-    if (json['order_chart_data'] != null) {
-      orderChartData = <OrderChartData>[];
-      json['order_chart_data'].forEach((v) {
-        orderChartData!.add(new OrderChartData.fromJson(v));
-      });
-    }
-    if (json['amount_chart_data'] != null) {
-      amountChartData = <OrderChartData>[];
-      json['amount_chart_data'].forEach((v) {
-        amountChartData!.add(new OrderChartData.fromJson(v));
-      });
-    }
-    if (json['credit_chart_data'] != null) {
-      creditChartData = <OrderChartData>[];
-      json['credit_chart_data'].forEach((v) {
-        creditChartData!.add(new OrderChartData.fromJsonCredit(v));
-      });
-    }
+    creditAmount = JsonParser.toStr(json['credit_amount']);
+    lifetimeSales = JsonParser.toStr(json['lifetime_sales']);
+    averageOrders = JsonParser.toStr(json['average_orders']);
+    totalProducts = JsonParser.toInt(json['total_products']);
+    orderChartData = JsonParser.toList(json['order_chart_data'], OrderChartData.fromJson);
+    amountChartData = JsonParser.toList(json['amount_chart_data'], OrderChartData.fromJson);
+    creditChartData = JsonParser.toList(json['credit_chart_data'], OrderChartData.fromJsonCredit);
   }
 
   Map<String, dynamic> toJson() {
@@ -65,21 +52,21 @@ class DashboarModel {
 
 class OrderChartData {
   String? time;
-  int? numberOfOrder;
-  int? orderAmount;
+  num? numberOfOrder;
+  num? orderAmount;
 
   OrderChartData({this.time, this.numberOfOrder, this.orderAmount});
 
   OrderChartData.fromJson(Map<String, dynamic> json) {
-    time = json['time'];
-    numberOfOrder = json['number_of_order'];
-    orderAmount = json['order_amount'];
+    time = JsonParser.toStr(json['time']);
+    numberOfOrder = JsonParser.toNum(json['number_of_order']);
+    orderAmount = JsonParser.toNum(json['order_amount']);
   }
 
   OrderChartData.fromJsonCredit(Map<String, dynamic> json) {
-    time = json['time'];
-    numberOfOrder = json['received'];
-    orderAmount = json['spent'];
+    time = JsonParser.toStr(json['time']);
+    numberOfOrder = JsonParser.toNum(json['received']);
+    orderAmount = JsonParser.toNum(json['spent']);
   }
 
   Map<String, dynamic> toJson() {

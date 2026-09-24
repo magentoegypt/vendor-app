@@ -1,3 +1,5 @@
+import '../../../core/utils/json_parser.dart';
+
 class UserModel {
   int? id;
   String? vendorId;
@@ -51,30 +53,30 @@ class UserModel {
         this.regionCode});
 
   UserModel.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    vendorId = json['vendor_id'];
-    email = json['email'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    groupId = json['group_id'];
-    status = json['status'];
-    city = json['city'];
-    company = json['company'];
-    countryId = json['country_id'];
-    postcode = json['postcode'];
-    regionId = json['region_id'];
-    street = json['street'];
-    telephone = json['telephone'];
-    customerId = json['customer_id'];
-    firstname = json['firstname'];
-    lastname = json['lastname'];
-    middlename = json['middlename'];
-    groupName = json['group_name'];
-    name = json['name'];
-    statusLabel = json['status_label'];
-    country = json['country'];
-    countryName = json['country_name'];
-    regionCode = json['region_code'];
+    id = JsonParser.toInt(json['id']);
+    vendorId = JsonParser.toStr(json['vendor_id']);
+    email = JsonParser.toStr(json['email']);
+    createdAt = JsonParser.toStr(json['created_at']);
+    updatedAt = JsonParser.toStr(json['updated_at']);
+    groupId = JsonParser.toInt(json['group_id']);
+    status = JsonParser.toInt(json['status']);
+    city = JsonParser.toStr(json['city']);
+    company = JsonParser.toStr(json['company']);
+    countryId = JsonParser.toStr(json['country_id']);
+    postcode = JsonParser.toStr(json['postcode']);
+    regionId = JsonParser.toInt(json['region_id']);
+    street = JsonParser.toStr(json['street']);
+    telephone = JsonParser.toStr(json['telephone']);
+    customerId = JsonParser.toInt(json['customer_id']);
+    firstname = JsonParser.toStr(json['firstname']);
+    lastname = JsonParser.toStr(json['lastname']);
+    middlename = JsonParser.toStr(json['middlename']);
+    groupName = JsonParser.toStr(json['group_name']);
+    name = JsonParser.toStr(json['name']);
+    statusLabel = JsonParser.toStr(json['status_label']);
+    country = JsonParser.toStr(json['country']);
+    countryName = JsonParser.toStr(json['country_name']);
+    regionCode = JsonParser.toStr(json['region_code']);
   }
 
   Map<String, dynamic> toJson() {

@@ -278,7 +278,7 @@ class Tools {
       return AppLocalizations.of(context)!.orderStatusCompleted;
     }else if(status.toLowerCase() == "processing"){
       return AppLocalizations.of(context)!.orderStatusProcessing;
-    }else if(status.toLowerCase() == "Cancelled"){
+    }else if(["canceled", "cancelled"].contains(status.toLowerCase())){
       return AppLocalizations.of(context)!.orderStatusCancelled;
     }
     return status;
