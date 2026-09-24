@@ -55,7 +55,6 @@ class OTPApiService {
         Uri.parse(forgotPasswordApi),
         headers: <String, String>{
           'Content-Type': 'application/json'
-          //'Authorization':"Bearer7cr1a9xo3o8os1l59q64goxbcg80mr4g"
         },
         body: json.encode(requestValueMap),
       );
@@ -103,7 +102,6 @@ class OTPApiService {
         Uri.parse(sendOTPApi),
         headers: <String, String>{
           'Content-Type': 'application/json'
-          //'Authorization':"Bearer7cr1a9xo3o8os1l59q64goxbcg80mr4g"
         },
         body: json.encode(requestValueMap),
       );

@@ -528,9 +528,7 @@ class _ProfileViewState extends State<ProfileViewWidget> {
           CupertinoDialogAction(
             onPressed: () {
               context.read<ProfileBloc>().add(
-                PerformDeleteVendor(
-                  vendorId: '${widget.userModel?.id ?? ""}',
-                ),
+                const PerformDeleteVendor(),
               );
               Navigator.of(ctxDialog).pop();
 

@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:multi_vendor/features/Products/CreateEditProduct/data/StockItemQunatityModel.dart';
 import 'package:multi_vendor/features/Products/ProductList/data/productListModel.dart';
-import '../../../../core/config/app_constants.dart';
 import '../../../../core/config/app_exceptions.dart';
 import '../../../../core/config/logger.dart';
 import '../../../../core/config/pref_keys.dart';
@@ -242,7 +241,7 @@ class CreateEditProductApiService {
         Uri.parse(vendorsSingleProductQuantityApi+productSku.replaceAll(" ","%20")),
         headers: <String, String>{
           'Content-Type': 'application/json',
-          "Authorization":"Bearer ${AdminKey ?? ""}"
+          "Authorization":"Bearer ${token ?? ""}"
         },
       );
       return apiResponseHelper(
@@ -263,6 +262,10 @@ class CreateEditProductApiService {
   Future<List<Map<String, dynamic>>> getProductCategories() async {
     final responseBody = await _getProductCategories();
     try {
+      // One root category tree, or a list of trees.
+      if (responseBody is List) {
+        return responseBody.whereType<Map<String, dynamic>>().toList();
+      }
       return [responseBody];
     } catch (exception, stackTrace) {
       //
@@ -283,7 +286,7 @@ class CreateEditProductApiService {
         Uri.parse(vendorsProductCategoriesApi),
         headers: <String, String>{
           'Content-Type': 'application/json',
-          "Authorization":"Bearer ${AdminKey ?? ""}"
+          "Authorization":"Bearer ${token ?? ""}"
         },
       );
       return apiResponseHelper(

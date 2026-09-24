@@ -27,4 +27,3 @@ const kDefaultImage =
     'https://trello.com/1/cards/5d64f19a7cd71013a9a418cf/attachments/5df37e7dc660f72ec2a6b147/previews/5df37e7ec660f72ec2a6b14f/download/placeholder.jpg';
 const kAppLogo = "assets/images/app_icon_transparent.png";
 const kAppName = "FluxStore Admin";
-const AdminKey = "qvy8jeg246pqwvxeoznpeogi3g0mgs2u";

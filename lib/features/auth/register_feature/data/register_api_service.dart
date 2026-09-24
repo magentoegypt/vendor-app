@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import '../../../../core/config/app_constants.dart';
 import '../../../../features/auth/register_feature/data/CountryListModel.dart';
 import '../../../../core/config/app_exceptions.dart';
 import '../../../../core/config/logger.dart';
@@ -23,6 +22,9 @@ class RegisterApiService {
       requestValueMap: requestValueMap,
     );
 
+    // Errors arrive as HTTP 400 and were thrown above, so any body here means
+    // the vendor was created; it is not read further.
+    if (responseBody is! Map<String, dynamic>) return SignUpModel();
     try {
       return SignUpModel.fromJson(responseBody);
     } catch (exception, stackTrace) {
@@ -37,7 +39,9 @@ class RegisterApiService {
     }
   }
 
-  /// get Data Functions
+  /// Anonymous POST /V1/vendors/register. The body carries the vendor, the
+  /// password and the registrationToken returned by the VENDOR_REGISTER OTP
+  /// verification, which proves the phone number.
   Future<dynamic> _postData({
     required Map<String, dynamic> requestValueMap,
   }) async {
@@ -46,7 +50,6 @@ class RegisterApiService {
         Uri.parse(userRegisterApi),
         headers: <String, String>{
           'Content-Type': 'application/json',
-          "Authorization":"Bearer $AdminKey"
         },
         body: json.encode(requestValueMap),
       );
@@ -54,12 +57,16 @@ class RegisterApiService {
         response: response,
         className: 'RegisterApiService',
         apiUrl: userRegisterApi,
-        requestValue: '$requestValueMap',
+        // Log the vendor only: the request also carries the password.
+        requestValue: '${requestValueMap['vendor']}',
         token: '',
       );
     } on SocketException {
       throw HttpException(StringValues.no_internet);
-    } catch (exception, stackTrace) {
+    } on AppException {
+      // Registration errors come back as 400 with a message for the vendor.
+      rethrow;
+    } catch (exception) {
       throw HttpException('Error Communicating with Server');
     }
   }

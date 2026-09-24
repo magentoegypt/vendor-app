@@ -48,14 +48,11 @@ class PerformCountriesList extends ProfileEvent {
   List<Object> get props => [];
 }
 
+/// Deletes the signed-in vendor's own account (no id: the token decides).
 class PerformDeleteVendor extends ProfileEvent {
 
-  final String vendorId;
-
-  const PerformDeleteVendor({
-    required this.vendorId,
-  });
+  const PerformDeleteVendor();
 
   @override
-  List<Object> get props => [vendorId];
+  List<Object> get props => [];
 }

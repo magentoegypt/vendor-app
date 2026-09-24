@@ -174,10 +174,20 @@ class Customer {
     if((fullname?.length ?? 0) > 1){
       data['lastname'] = fullname?[1];
     }
-    final Map<String, dynamic> extension_attributes = new Map<String, dynamic>();
-    extension_attributes['password'] = this.password;
-    data['extension_attributes'] = extension_attributes;
     return data;
+  }
+
+  /// Body for POST /V1/vendors/register. [registrationToken] comes from the
+  /// VENDOR_REGISTER OTP verification and ties the account to [telephone].
+  Map<String, dynamic> toRegisterRequest({
+    required String telephone,
+    required String registrationToken,
+  }) {
+    return {
+      'vendor': toRegisterJson()..['telephone'] = telephone,
+      'password': password,
+      'registrationToken': registrationToken,
+    };
   }
 }
 

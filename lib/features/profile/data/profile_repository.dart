@@ -34,11 +34,9 @@ class ProfileRepository {
     }
   }
 
-  Future<bool> deleteVendorData({
-    required String vendorId,
-  }) async {
+  Future<bool> deleteVendorData() async {
     try {
-      return _service.deleteVendorData(vendorId);
+      return _service.deleteVendorData();
     } on Exception {
       throw ProfileRepositoryException();
     }

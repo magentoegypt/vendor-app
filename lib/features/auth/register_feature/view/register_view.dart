@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -184,11 +183,12 @@ class _RegisterViewState extends State<RegisterView> {
                 }else if (state is VerifyMobileOTPLoaded) {
                   if(state.mobileOTPModel.status == "success"){
                     customer.country_id = countryListModel?.id;
-                    customer.telephone = "${countryCode?.dialCode?.replaceAll("+", "")}${customer.telephone?.trim()}";
-                    final Map<String, dynamic> data = new Map<String, dynamic>();
-                    data['vendor'] = customer.toRegisterJson();
-                    print(jsonEncode(data));
-                    //'${data}'.log();
+                    // The prefixed number is only used in the request, so a
+                    // retry after a failed registration still validates.
+                    final data = customer.toRegisterRequest(
+                      telephone: "${countryCode?.dialCode?.replaceAll("+", "")}${customer.telephone?.trim()}",
+                      registrationToken: state.mobileOTPModel.token ?? "",
+                    );
                     context.read<RegisterBloc>().add(
                       PerformUserRegister(
                         requestValueMap: data,

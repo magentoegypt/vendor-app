@@ -47,7 +47,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
   void _onPerformDeleteVendor(event, emit) async {
     try {
       emit(ProfileLoading());
-      final result = await repository.deleteVendorData(vendorId: event.vendorId);
+      final result = await repository.deleteVendorData();
       emit(DeleteVendorLoaded(isDelete: result));
     } on Exception catch (e) {
       emit(ProfileError(errorMessage: e.toString()));
