@@ -1144,5 +1144,6 @@
     "attributeSet":"مجموعة السمات",
     "isrequired":"مطلوب.",
     "setnewpassword":"تعيين كلمة مرور جديدة",
-    "categoriesProduct":"الفئات"
+    "categoriesProduct":"الفئات",
+    "invalidNumber":"يجب أن يكون رقمًا صالحًا."
 }

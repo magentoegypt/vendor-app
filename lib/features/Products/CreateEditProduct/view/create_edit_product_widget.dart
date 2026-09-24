@@ -21,6 +21,8 @@ import '../../../../core/config/tools.dart';
 import '../../../../core/helper/api_url_helpers.dart';
 import '../../../../core/helper/loading_screen.dart';
 import '../../../../core/helper/shared_preferences_helpers.dart';
+import '../../../../core/utils/json_parser.dart';
+import '../../../../core/utils/numeric_input_formatter.dart';
 import '../bloc/create_edit_product_bloc.dart';
 import '../bloc/create_edit_product_event.dart';
 import '../bloc/create_edit_product_state.dart';
@@ -78,6 +80,53 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
   bool isRTL = false;
   bool isExpanded = true;
 
+  /// One controller per attribute, kept across rebuilds. Creating them in
+  /// build() replaced the field's controller on every rebuild (each frame of
+  /// the keyboard animation), which reset the text and cursor while typing.
+  final Map<String, TextEditingController> _controllers = {};
+
+  @override
+  void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  TextEditingController _controllerFor(ProductAttributeModel attribute) {
+    return _controllers.putIfAbsent(attribute.attributeCode ?? '',
+        () => TextEditingController(text: _displayValue(attribute)));
+  }
+
+  /// Pushes model values into the text fields after data is (re)loaded.
+  void _syncControllers() {
+    for (final attribute in list) {
+      _controllers[attribute.attributeCode ?? '']?.text = _displayValue(attribute);
+    }
+  }
+
+  String _displayValue(ProductAttributeModel attribute) {
+    final value = attribute.value;
+    if (value == null) return '';
+    return value is num ? Tools.formatQty(value) : value.toString();
+  }
+
+  bool _isNumeric(ProductAttributeModel attribute) {
+    return ["price", "weight"].contains(attribute.frontendInput) ||
+        attribute.attributeCode == "product_quantity";
+  }
+
+  /// The SKU typed by the vendor, or null to fall back to the product name.
+  String? _enteredSku() {
+    for (final attribute in list) {
+      if (attribute.attributeCode == "sku") {
+        final sku = attribute.value?.toString().trim() ?? '';
+        return sku.isEmpty ? null : sku;
+      }
+    }
+    return null;
+  }
+
   @override
   void initState() {
     // TODO: implement initState
@@ -98,11 +147,9 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
 
     list.forEach((attributeModel){
       if(attributeModel.attributeCode == "sku"){
-        // if(selectedLanguage == 'ar'){
-        //   attributeModel.value = productItem?.sku ?? "1_${DateTime.now().millisecondsSinceEpoch}_${userModel?.id}";
-        // }else{
-        //   attributeModel.value = productItem?.sku ?? "${userModel?.id}_${DateTime.now().millisecondsSinceEpoch}_1";
-        // }
+        if(widget.productSku.isNotEmpty){
+          attributeModel.value = widget.productSku;
+        }
       }else if(attributeModel.attributeCode == "name"){
         attributeModel.value = productItem?.name;
       }else if(attributeModel.attributeCode == "price"){
@@ -155,6 +202,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
       productItem?.mediaGalleryEntries?.forEach((elment){
         galleryproductAttributeModel.galleryImages.add(baseProductImageUrl+(elment.file ?? ""));
       });
+      _syncControllers();
   }
 
   void getAttributeList(){
@@ -385,17 +433,15 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                               }else if((list[index].defaultFrontendLabel ?? "").isEmpty || list[index].defaultFrontendLabel  == "[]"){
                                 return const SizedBox();
                               }else if((list[index].attributeCode ?? "") == "product_quantity"){
-                                TextEditingController controller = new TextEditingController();
-                                if(list[index].value != null) {
-                                  controller.text = list[index].value.toString();
-                                }
+                                final attribute = list[index];
                                 return EditProductInfoWidget(
-                                  controller: controller,
-                                  label: list[index].defaultFrontendLabel ?? "",
+                                  controller: _controllerFor(attribute),
+                                  label: attribute.defaultFrontendLabel ?? "",
                                   onChanged: (val) {
-                                    list[index].value = val;
+                                    attribute.value = val;
                                   },
                                   keyboardType: TextInputType.number,
+                                  inputFormatters: [NumericInputFormatter(decimal: false)],
                                 );
                               }else if(list[index].attributeCode == "news_from_date"){
                                 ProductAttributeModel productDateTo = list.firstWhere((e) => e.attributeCode == 'news_to_date');
@@ -441,52 +487,41 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                               }
                               switch(list[index].frontendInput){
                                   case "text":
-                                    TextEditingController controller = new TextEditingController();
-                                    if(list[index].value != null) {
-                                      controller.text = list[index].value.toString();
-                                    }
-                                    bool enable = true;
-                                    if(list[index].attributeCode == "sku"){
-                                      enable = false;
-                                      if(widget.productSku.isNotEmpty){
-                                        controller.text = widget.productSku;
-                                      }
-                                    }
+                                    final attribute = list[index];
+                                    // The SKU identifies the product in Magento's API, so it
+                                    // is editable when creating but fixed once saved.
+                                    final enable = attribute.attributeCode != "sku" || widget.productSku.isEmpty;
                                   return EditProductInfoWidget(
-                                    controller: controller,
-                                  label: list[index].defaultFrontendLabel ?? "",
+                                    controller: _controllerFor(attribute),
+                                  label: attribute.defaultFrontendLabel ?? "",
                                   onChanged: (val) {
-                                    list[index].value = val;
+                                    attribute.value = val;
                                   },
                                   keyboardType: TextInputType.multiline,
                                     enable: enable,
                                   );
                                 case "textarea":
-                                  TextEditingController controller = new TextEditingController();
-                                  if(list[index].value != null) {
-                                    controller.text = list[index].value.toString();
-                                  }
+                                  final attribute = list[index];
                                   return EditProductInfoWidget(
-                                    controller: controller,
-                                    label: list[index].defaultFrontendLabel ?? "",
+                                    controller: _controllerFor(attribute),
+                                    label: attribute.defaultFrontendLabel ?? "",
                                     onChanged: (val) {
-                                      list[index].value = val;
+                                      attribute.value = val;
                                     },
                                     isMultiline: true,
                                     keyboardType: TextInputType.multiline,
                                   );
                                 case "price" || "weight":
-                                  TextEditingController controller = new TextEditingController();
-                                  if(list[index].value != null) {
-                                    controller.text = list[index].value.toString();
-                                  }
+                                  final attribute = list[index];
                                   return EditProductInfoWidget(
-                                    controller: controller,
-                                    label: list[index].defaultFrontendLabel ?? "",
+                                    controller: _controllerFor(attribute),
+                                    label: attribute.defaultFrontendLabel ?? "",
                                     onChanged: (val) {
-                                      list[index].value = val;
+                                      attribute.value = val;
                                     },
-                                    keyboardType: TextInputType.number,
+                                    // TextInputType.number has no decimal key on iOS.
+                                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                    inputFormatters: [NumericInputFormatter()],
                                   );
                                 case "date":
                                   return EditProductInfoDateWidget(
@@ -653,8 +688,12 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                     list[index].attributeCode  == "sku") {
 
                                 }else{
-                                  if((list[index].isRequired ?? false) && (list[index].value == null || list[index].value.toString().isEmpty)){
+                                  if((list[index].isRequired ?? false) && (list[index].value == null || list[index].value.toString().trim().isEmpty)){
                                     Tools.showSnackBar(ScaffoldMessenger.of(context),"${list[index].defaultFrontendLabel} ${AppLocalizations.of(context)!.isrequired}");
+                                    return;
+                                  }
+                                  if(_isNumeric(list[index]) && (list[index].value?.toString() ?? "").isNotEmpty && JsonParser.toNum(list[index].value) == null){
+                                    Tools.showSnackBar(ScaffoldMessenger.of(context),"${list[index].defaultFrontendLabel} ${AppLocalizations.of(context)!.invalidNumber}");
                                     return;
                                   }
                                   if(list[index].attributeCode == "sku"){
@@ -666,20 +705,22 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                   }else if(list[index].attributeCode == "name"){
                                     product['name'] = list[index].value;
                                     if(productItem == null){
-                                      product['sku'] = list[index].value;
+                                      product['sku'] = _enteredSku() ?? list[index].value;
                                     }else if(productItem != null){
                                       product['sku'] = widget.productSku;
                                     }
                                   }else if(list[index].attributeCode == "price"){
-                                    product['price'] = list[index].value;
+                                    product['price'] = JsonParser.toNum(list[index].value);
                                   }else if(list[index].attributeCode == "weight"){
-                                    if(list[index].value != null && list[index].value.toString().isNotEmpty) {
-                                      product['weight'] = list[index].value;
+                                    final weight = JsonParser.toNum(list[index].value);
+                                    if(weight != null) {
+                                      product['weight'] = weight;
                                     }
                                   }else if(list[index].attributeCode == "product_quantity"){
+                                   final qty = JsonParser.toNum(list[index].value) ?? 0;
                                    Map<String, dynamic> stock_item = new Map<String, dynamic>();
-                                    stock_item['qty'] = list[index].value;
-                                    if(list[index].value.toString().isEmpty || list[index].value.toString() == "0"){
+                                    stock_item['qty'] = qty;
+                                    if(qty <= 0){
                                       stock_item['is_in_stock'] = 0;
                                       stock_item['manage_stock'] = 0;
                                     }else{

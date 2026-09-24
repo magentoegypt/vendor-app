@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../core/config/app_constants.dart';
 
@@ -12,6 +13,7 @@ class EditProductInfoWidget extends StatelessWidget {
   final Widget? suffixIcon;
   final double? fontSize;
   final TextInputType keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
   final bool? enable;
   final onChanged;
   final onTap;
@@ -28,6 +30,7 @@ class EditProductInfoWidget extends StatelessWidget {
     this.fontSize,
     this.isObscure = false,
     this.keyboardType = TextInputType.text,
+    this.inputFormatters,
     this.enable = true,
     this.onChanged,
     this.onTap,
@@ -90,6 +93,7 @@ class EditProductInfoWidget extends StatelessWidget {
             obscureText: isObscure,
             maxLines: isMultiline ? 7 : 1,
             keyboardType: keyboardType,
+            inputFormatters: inputFormatters,
             enabled: enable,
           ),
         ),
