@@ -12,6 +12,7 @@ import '../../../../core/config/colors.dart';
 import '../../../../core/config/locator.dart';
 import '../../../../core/config/tools.dart';
 import '../../../../core/helper/loading_screen.dart';
+import '../../../../core/utils/numeric_input_formatter.dart';
 import '../../../../core/utils/validator.dart';
 import '../bloc/register_bloc.dart';
 import '../data/CountryListModel.dart';
@@ -39,6 +40,7 @@ class _RegisterViewState extends State<RegisterView> {
   final companyNode = FocusNode();
   final cityNode = FocusNode();
   final stateProvinceNode = FocusNode();
+  final streetNode = FocusNode();
   final zipCodeNode = FocusNode();
   final phoneNumberNode = FocusNode();
   final emailNode = FocusNode();
@@ -118,6 +120,8 @@ class _RegisterViewState extends State<RegisterView> {
     passwordNode.dispose();
     phoneNumberNode.dispose();
     confirmpasswordNode.dispose();
+    streetNode.dispose();
+    zipCodeNode.dispose();
     super.dispose();
   }
 
@@ -310,11 +314,29 @@ class _RegisterViewState extends State<RegisterView> {
                       CustomTextField(
                           autofillHints: const [AutofillHints.familyName],
                           focusNode: cityNode,
-                          nextNode: phoneNumberNode,
+                          nextNode: streetNode,
                           showCancelIcon: true,
                           onChanged: (value) => customer.city = value,
                           decoration: _inputDecoration("${AppLocalizations.of(context)!.city}*",
                               "${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.city}")
+                      ),
+                      CustomTextField(
+                          autofillHints: const [AutofillHints.streetAddressLine1],
+                          focusNode: streetNode,
+                          nextNode: zipCodeNode,
+                          showCancelIcon: true,
+                          onChanged: (value) => customer.street = value,
+                          decoration: _inputDecoration(AppLocalizations.of(context)!.streetAddress,
+                              "${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.streetAddress}")
+                      ),
+                      CustomTextField(
+                          autofillHints: const [AutofillHints.postalCode],
+                          focusNode: zipCodeNode,
+                          nextNode: phoneNumberNode,
+                          showCancelIcon: true,
+                          onChanged: (value) => customer.postcode = normalizeDigits(value),
+                          decoration: _inputDecoration(AppLocalizations.of(context)!.zipPostalCode,
+                              "${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.zipPostalCode}")
                       ),
                       const SizedBox(height: 5.0),
                       Directionality(

@@ -1147,5 +1147,7 @@
     "categoriesProduct":"الفئات",
     "invalidNumber":"يجب أن يكون رقمًا صالحًا.",
     "vendorAccountUnavailable":"تم تسجيل الدخول، لكن تعذّر تحميل حساب البائع. قد يكون الحساب قيد المراجعة. يرجى التواصل مع الدعم.",
-    "sessionExpiredMessage":"انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى."
+    "sessionExpiredMessage":"انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.",
+    "streetAddress":"عنوان الشارع",
+    "zipPostalCode":"الرمز البريدي"
 }

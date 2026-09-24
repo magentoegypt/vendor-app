@@ -135,8 +135,7 @@ class Customer {
     data['city'] = this.city;
     data['company'] = this.company;
     data['country_id'] = this.country_id;
-   // data['postcode'] = this.postcode;
- //   data['street'] = this.street;
+    _putAddress(data);
     data['region'] = this.region;
     data['telephone'] = this.telephone;
     if((fullname?.length ?? 0) > 0){
@@ -149,6 +148,13 @@ class Customer {
     }
     return data;
   }
+
+  /// Street and postcode are optional, so they are only sent when filled in:
+  /// a vendor who leaves them empty sends the same payload as before.
+  void _putAddress(Map<String, dynamic> data) {
+    if ((street ?? '').trim().isNotEmpty) data['street'] = street!.trim();
+    if ((postcode ?? '').trim().isNotEmpty) data['postcode'] = postcode!.trim();
+  }
   Map<String, dynamic> toRegisterJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     var fullname = firstname?.split(' ');
@@ -157,8 +163,7 @@ class Customer {
     data['city'] = this.city;
     data['company'] = this.company;
     data['country_id'] = this.country_id;
-   // data['postcode'] = this.postcode;
-  //  data['street'] = this.street;
+    _putAddress(data);
     data['region'] = this.region;
     data['telephone'] = this.telephone;
     if((fullname?.length ?? 0) > 0){

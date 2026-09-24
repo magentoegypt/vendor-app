@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:collection/collection.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,7 @@ import '../../../common/edit_product_info_widget.dart';
 import '../../../common/otp_dialog.dart';
 import '../../../core/config/pref_keys.dart';
 import '../../../core/helper/shared_preferences_helpers.dart';
+import '../../../core/utils/numeric_input_formatter.dart';
 import '../../auth/api_login_feature/view/login_view.dart';
 import '../../auth/register_feature/data/CountryListModel.dart';
 import '../../auth/register_feature/data/SignUpModel.dart';
@@ -43,8 +45,20 @@ class _ProfileViewState extends State<ProfileViewWidget> {
   final companyNode = FocusNode();
   final cityNode = FocusNode();
   final stateProvinceNode = FocusNode();
+  final streetNode = FocusNode();
   final zipCodeNode = FocusNode();
   final phoneNumberNode = FocusNode();
+
+  // Created once: controllers built inside build() reset every field to the
+  // stored profile whenever the screen rebuilt (e.g. picking a country).
+  late final TextEditingController _vendorIdController;
+  late final TextEditingController _fullNameController;
+  late final TextEditingController _companyController;
+  late final TextEditingController _cityController;
+  late final TextEditingController _stateProvinceController;
+  late final TextEditingController _streetController;
+  late final TextEditingController _zipCodeController;
+  late final TextEditingController _phoneController;
 
   Customer customer = Customer();
   List<CountryListModel> _list = [];
@@ -77,6 +91,14 @@ class _ProfileViewState extends State<ProfileViewWidget> {
         customer.telephone = phoneWithoutCOde;
       }catch(e){}
     }
+    _vendorIdController = TextEditingController(text: widget.userModel?.vendorId);
+    _fullNameController = TextEditingController(text: "${widget.userModel?.firstname ?? ""} ${widget.userModel?.lastname ?? ""}");
+    _companyController = TextEditingController(text: widget.userModel?.company);
+    _cityController = TextEditingController(text: widget.userModel?.city);
+    _stateProvinceController = TextEditingController(text: widget.userModel?.regionCode);
+    _streetController = TextEditingController(text: customer.street);
+    _zipCodeController = TextEditingController(text: customer.postcode);
+    _phoneController = TextEditingController(text: customer.telephone);
   }
 
   Future selectFileToUpload() async {
@@ -125,6 +147,15 @@ class _ProfileViewState extends State<ProfileViewWidget> {
   @override
   void dispose() {
     phoneNumberNode.dispose();
+    streetNode.dispose();
+    zipCodeNode.dispose();
+    for (final controller in [
+      _vendorIdController, _fullNameController, _companyController,
+      _cityController, _stateProvinceController, _streetController,
+      _zipCodeController, _phoneController,
+    ]) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -152,7 +183,7 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                 if (state is CountriesLoaded) {
                   setState(() {
                     _list = state.list;
-                    countryListModel = _list.firstWhere((e) => e.id == widget.userModel?.countryId);
+                    countryListModel = _list.firstWhereOrNull((e) => e.id == widget.userModel?.countryId);
                   });
                 }else if (state is ProfileLoaded) {
                   userModel = state.userInfo;
@@ -259,7 +290,7 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                       const SizedBox(height: 5.0),
 
                       CustomTextField(
-                          controller: TextEditingController(text: widget.userModel?.vendorId),
+                          controller: _vendorIdController,
                           autofillHints: const [AutofillHints.familyName],
                           focusNode: vendorIdNode,
                           nextNode: fullNameNode,
@@ -269,7 +300,7 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                       ),
                       const SizedBox(height: 5.0,),
                       CustomTextField(
-                          controller: TextEditingController(text: "${widget.userModel?.firstname ?? ""} ${widget.userModel?.lastname ?? ""}"),
+                          controller: _fullNameController,
                           autofillHints: const [AutofillHints.givenName],
                           onChanged: (value) => customer.firstname = value,
                           textCapitalization: TextCapitalization.words,
@@ -281,7 +312,7 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                       ),
                       const SizedBox(height: 5.0),
                       CustomTextField(
-                          controller: TextEditingController(text: widget.userModel?.company),
+                          controller: _companyController,
                           autofillHints: const [AutofillHints.familyName],
                           focusNode: companyNode,
                           nextNode: cityNode,
@@ -292,7 +323,7 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                       ),
                       const SizedBox(height: 5.0),
                       CustomTextField(
-                          controller: TextEditingController(text: widget.userModel?.city),
+                          controller: _cityController,
                           autofillHints: const [AutofillHints.familyName],
                           focusNode: cityNode,
                           nextNode: stateProvinceNode,
@@ -303,14 +334,36 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                       ),
                       const SizedBox(height: 5.0),
                       CustomTextField(
-                          controller: TextEditingController(text: widget.userModel?.regionCode),
+                          controller: _stateProvinceController,
                           autofillHints: const [AutofillHints.familyName],
                           focusNode: stateProvinceNode,
-                          nextNode: zipCodeNode,
+                          nextNode: streetNode,
                           showCancelIcon: true,
                            onChanged: (value) => customer.region = value,
                           decoration: _inputDecoration("${AppLocalizations.of(context)!.stateProvince}*",
                               "${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.stateProvince}")
+                      ),
+                      const SizedBox(height: 5.0),
+                      CustomTextField(
+                          controller: _streetController,
+                          autofillHints: const [AutofillHints.streetAddressLine1],
+                          focusNode: streetNode,
+                          nextNode: zipCodeNode,
+                          showCancelIcon: true,
+                          onChanged: (value) => customer.street = value,
+                          decoration: _inputDecoration(AppLocalizations.of(context)!.streetAddress,
+                              "${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.streetAddress}")
+                      ),
+                      const SizedBox(height: 5.0),
+                      CustomTextField(
+                          controller: _zipCodeController,
+                          autofillHints: const [AutofillHints.postalCode],
+                          focusNode: zipCodeNode,
+                          nextNode: phoneNumberNode,
+                          showCancelIcon: true,
+                          onChanged: (value) => customer.postcode = normalizeDigits(value),
+                          decoration: _inputDecoration(AppLocalizations.of(context)!.zipPostalCode,
+                              "${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.zipPostalCode}")
                       ),
                       const SizedBox(height: 5.0),
                       Directionality(
@@ -343,7 +396,7 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                             ),
                             const SizedBox(width: 2.0),
                             Expanded(child: EditProductInfoWidget(
-                              controller: TextEditingController(text: customer.telephone),
+                              controller: _phoneController,
                               label: selectedLanguage == 'ar' ? "*${AppLocalizations.of(context)!.phone}":"${AppLocalizations.of(context)!.phone}*",
                               fontSize: 12.0,
                               focusNode: phoneNumberNode,
@@ -411,7 +464,9 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                           elevation: 0,
                           child: MaterialButton(
                             onPressed: () async {
-
+                              // Start from what the field shows: a previous press
+                              // already prefixed customer.telephone with the dial code.
+                              customer.telephone = _phoneController.text.trim();
                               if (_allValidation()) {
                                 customer.telephone = "${countryCode?.dialCode?.replaceAll("+", "")}${customer.telephone?.trim()}";
                                 customer.id = widget.userModel?.id;

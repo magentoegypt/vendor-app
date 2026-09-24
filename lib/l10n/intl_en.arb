@@ -1147,5 +1147,7 @@
 	 "categoriesProduct":"Categories",
 	 "invalidNumber":"must be a valid number.",
 	 "vendorAccountUnavailable":"You signed in, but your vendor account could not be loaded. It may still be pending approval. Please contact support.",
-	 "sessionExpiredMessage":"Your session has expired. Please log in again."
+	 "sessionExpiredMessage":"Your session has expired. Please log in again.",
+	 "streetAddress":"Street Address",
+	 "zipPostalCode":"Zip/Postal Code"
 }
