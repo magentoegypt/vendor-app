@@ -39,10 +39,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # pubspec.lock was resolved with Flutter 3.22, and the pinned
-  # extended_image / wechat_assets_picker releases do not compile on much
-  # newer SDKs, so CI stays on the version the app is built with.
-  FLUTTER_VERSION: '3.22.3'
+  # The SDK the app is developed on. pubspec.lock needs Flutter 3.29+
+  # (extended_image 10), and the Android build uses the declarative Gradle
+  # plugins, AGP 8.11 and Kotlin 2.2 that Flutter 3.44 expects.
+  FLUTTER_VERSION: '3.44.4'
   NOTES: ${{ github.event.inputs.notes || github.event.head_commit.message }}
 
 jobs:
@@ -177,7 +177,7 @@ jobs:
     name: iOS IPA
     needs: [test, ios-secrets]
     if: needs.ios-secrets.outputs.ready == 'true' && github.event.inputs.platform != 'android'
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 60
     env:
       TESTFLIGHT: ${{ needs.ios-secrets.outputs.testflight }}
@@ -189,15 +189,14 @@ jobs:
       - name: Pick build number
         run: echo "BUILD_NUMBER=$(date -u +%y%j%H%M)" >> "$GITHUB_ENV"
 
-      # Flutter 3.22 predates Xcode 26. Xcode 16.4 is the image default and the
-      # one whose iOS platform is installed; Xcode_16.app is 16.0 without it.
-      - name: Select Xcode 16
+      # App Store Connect only accepts builds made with the iOS 26 SDK or later
+      # (since April 2026). Xcode 26.6 is the image default, with its iOS
+      # platform installed; if the image drops it, keep whatever the default is.
+      - name: Select Xcode 26
         run: |
-          xcode=/Applications/Xcode_16.4.app
-          if [ ! -d "$xcode" ]; then
-            xcode=$(ls -d /Applications/Xcode_16.*.app | sort -V | tail -1)
+          if [ -d /Applications/Xcode_26.6.app ]; then
+            sudo xcode-select -s /Applications/Xcode_26.6.app
           fi
-          sudo xcode-select -s "$xcode"
           xcodebuild -version
 
       - uses: subosito/flutter-action@v2
@@ -242,14 +241,15 @@ jobs:
           if [ -z "$bundle_id" ] || [ "$bundle_id" = "*" ]; then
             bundle_id=com.magentoegypt.multivenors
           fi
+          # Xcode 15.4+ names: release-testing was ad-hoc, debugging was development.
           if [ "$(plist ProvisionsAllDevices)" = "true" ]; then
             export_method=enterprise
           elif [ "$(plist Entitlements:get-task-allow)" = "true" ]; then
-            export_method=development
+            export_method=debugging
           else
-            export_method=ad-hoc
+            export_method=release-testing
           fi
-          # Xcode 16 reads profiles from UserData; older Xcodes from MobileDevice.
+          # Xcode 16+ reads profiles from UserData; older Xcodes from MobileDevice.
           for dir in "$HOME/Library/MobileDevice/Provisioning Profiles" \
                      "$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"; do
             mkdir -p "$dir"
