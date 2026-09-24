@@ -56,7 +56,7 @@ class VendorAdminProductListCardWidget extends StatelessWidget {
                 children: [
                   const SizedBox(height: 5.0),
                   Text(
-                    product!.name!,
+                    product?.name ?? '',
                     style: const TextStyle(
                       fontSize: 18.0,
                       fontWeight: FontWeight.w200,
@@ -74,7 +74,7 @@ class VendorAdminProductListCardWidget extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text('${AppLocalizations.of(context)!.qty}: ${product!.qty ?? 0}',
+                        child: Text('${AppLocalizations.of(context)!.qty}: ${Tools.formatQty(product?.qty ?? 0)}',
                           style: const TextStyle(fontSize: 12.0),
                         ),
                       ),

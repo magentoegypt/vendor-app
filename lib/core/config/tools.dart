@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:universal_platform/universal_platform.dart';
 
+import '../utils/json_parser.dart';
 import 'app_constants.dart';
 import 'locator.dart';
 
@@ -252,9 +253,22 @@ class Tools {
 
   static String getCurrencyCode(dynamic number){
     if(selectedLanguage == "ar")
-      return "$number ج.م.";
+      return "${formatPrice(number)} ج.م.";
     else
-      return "EGB$number";
+      return "EGP${formatPrice(number)}";
+  }
+
+  /// Money for display with two decimals: 149.95, 100.00.
+  static String formatPrice(dynamic value) {
+    final number = JsonParser.toNum(value);
+    return number == null ? (value?.toString() ?? '') : number.toStringAsFixed(2);
+  }
+
+  /// Quantities and percentages without trailing zeros: 2, 2.5.
+  static String formatQty(dynamic value) {
+    final number = JsonParser.toNum(value);
+    if (number == null) return value?.toString() ?? '';
+    return number == number.truncate() ? number.toInt().toString() : number.toString();
   }
 
   static String getOrderStatus(BuildContext context,String status){

@@ -1,3 +1,4 @@
+import '../../../../core/utils/json_parser.dart';
 import '../../CreateEditProduct/data/StockItemQunatityModel.dart';
 
 class ProductListModel {
@@ -7,13 +8,8 @@ class ProductListModel {
   ProductListModel({this.products, this.totalCount});
 
   ProductListModel.fromJson(Map<String, dynamic> json) {
-    if (json['items'] != null) {
-      products = <ProductItem>[];
-      json['items'].forEach((v) {
-        products!.add(new ProductItem.fromJson(v));
-      });
-    }
-    totalCount = json['total_count'];
+    products = JsonParser.toList(json['items'], ProductItem.fromJson);
+    totalCount = JsonParser.toInt(json['total_count']);
   }
 
   Map<String, dynamic> toJson() {
@@ -27,7 +23,7 @@ class ProductListModel {
 }
 
 class ProductItem {
-  int? qty;
+  num? qty;
   int? id;
   String? sku;
   String? name;
@@ -38,7 +34,7 @@ class ProductItem {
   String? typeId;
   String? createdAt;
   String? updatedAt;
-  int? weight;
+  num? weight;
   StockItemQunatityModel? stockItemQunatityModel;
   List<ProductLinks>? productLinks;
   List<CustomAttributes>? customAttributes;
@@ -63,38 +59,24 @@ class ProductItem {
         this.thumbnailUrl});
 
   ProductItem.fromJson(Map<String, dynamic> json) {
-    qty = json['qty'];
-    id = json['id'];
-    sku = json['sku'];
-    name = json['name'];
-    attributeSetId = json['attribute_set_id'];
-    price = json['price'];
-    status = json['status'];
-    visibility = json['visibility'];
-    typeId = json['type_id'];
-    createdAt = json['created_at'];
-    updatedAt = json['updated_at'];
-    weight = json['weight'];
-    if (json['product_links'] != null) {
-      productLinks = <ProductLinks>[];
-      json['product_links'].forEach((v) {
-        productLinks!.add(new ProductLinks.fromJson(v));
-      });
-    }
-    if (json['media_gallery_entries'] != null) {
-      mediaGalleryEntries = <MediaGalleryEntries>[];
-      json['media_gallery_entries'].forEach((v) {
-        mediaGalleryEntries!.add(new MediaGalleryEntries.fromJson(v));
-      });
-    }
-
-    if (json['custom_attributes'] != null) {
-      customAttributes = <CustomAttributes>[];
-      json['custom_attributes'].forEach((v) {
-        customAttributes!.add(new CustomAttributes.fromJson(v));
-      });
-    }
-    thumbnailUrl = json['thumbnail_url'];
+    qty = JsonParser.toNum(json['qty']);
+    id = JsonParser.toInt(json['id']);
+    sku = JsonParser.toStr(json['sku']);
+    name = JsonParser.toStr(json['name']);
+    attributeSetId = JsonParser.toInt(json['attribute_set_id']);
+    price = JsonParser.toNum(json['price']);
+    status = JsonParser.toInt(json['status']);
+    visibility = JsonParser.toInt(json['visibility']);
+    typeId = JsonParser.toStr(json['type_id']);
+    createdAt = JsonParser.toStr(json['created_at']);
+    updatedAt = JsonParser.toStr(json['updated_at']);
+    weight = JsonParser.toNum(json['weight']);
+    productLinks = JsonParser.toList(json['product_links'], ProductLinks.fromJson);
+    mediaGalleryEntries = JsonParser.toList(
+        json['media_gallery_entries'], MediaGalleryEntries.fromJson);
+    customAttributes =
+        JsonParser.toList(json['custom_attributes'], CustomAttributes.fromJson);
+    thumbnailUrl = JsonParser.toStr(json['thumbnail_url']);
   }
 
   Map<String, dynamic> toJson() {
@@ -147,13 +129,13 @@ class MediaGalleryEntries {
         this.file});
 
   MediaGalleryEntries.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    mediaType = json['media_type'];
-    label = json['label'];
-    position = json['position'];
-    disabled = json['disabled'];
-    types = json['types'].cast<String>();
-    file = json['file'];
+    id = JsonParser.toInt(json['id']);
+    mediaType = JsonParser.toStr(json['media_type']);
+    label = JsonParser.toStr(json['label']);
+    position = JsonParser.toInt(json['position']);
+    disabled = JsonParser.toBool(json['disabled']);
+    types = JsonParser.toStringList(json['types']);
+    file = JsonParser.toStr(json['file']);
   }
 
   Map<String, dynamic> toJson() {
@@ -184,11 +166,11 @@ class ProductLinks {
         this.position});
 
   ProductLinks.fromJson(Map<String, dynamic> json) {
-    sku = json['sku'];
-    linkType = json['link_type'];
-    linkedProductSku = json['linked_product_sku'];
-    linkedProductType = json['linked_product_type'];
-    position = json['position'];
+    sku = JsonParser.toStr(json['sku']);
+    linkType = JsonParser.toStr(json['link_type']);
+    linkedProductSku = JsonParser.toStr(json['linked_product_sku']);
+    linkedProductType = JsonParser.toStr(json['linked_product_type']);
+    position = JsonParser.toInt(json['position']);
   }
 
   Map<String, dynamic> toJson() {
@@ -209,7 +191,7 @@ class CustomAttributes {
   CustomAttributes({this.attributeCode, this.value});
 
   CustomAttributes.fromJson(Map<String, dynamic> json) {
-    attributeCode = json['attribute_code'];
+    attributeCode = JsonParser.toStr(json['attribute_code']);
     value = json['value'];
   }
 
