@@ -19,6 +19,7 @@ import '../../../common/otp_dialog.dart';
 import '../../../core/config/pref_keys.dart';
 import '../../../core/helper/shared_preferences_helpers.dart';
 import '../../../core/utils/numeric_input_formatter.dart';
+import '../../../core/utils/phone_number.dart';
 import '../../auth/api_login_feature/view/login_view.dart';
 import '../../auth/register_feature/data/CountryListModel.dart';
 import '../../auth/register_feature/data/SignUpModel.dart';
@@ -83,14 +84,10 @@ class _ProfileViewState extends State<ProfileViewWidget> {
     customer.city = widget.userModel?.city;
     customer.region = widget.userModel?.regionCode;
     customer.postcode = widget.userModel?.postcode;
-    customer.telephone = widget.userModel?.telephone;
-    if((widget.userModel?.telephone ?? "").isNotEmpty) {
-      try{
-        String? phoneWithoutCOde =widget.userModel?.telephone?.substring(
-            2, (widget.userModel?.telephone?.length ?? 0));
-        customer.telephone = phoneWithoutCOde;
-      }catch(e){}
-    }
+    // Saved as "+20…": cutting two characters left "0…", which the update
+    // validation then rejects ("Please enter the number without 0").
+    customer.telephone = PhoneNumber.local(widget.userModel?.telephone,
+        dialCode: countryCode?.dialCode ?? '+20');
     _vendorIdController = TextEditingController(text: widget.userModel?.vendorId);
     _fullNameController = TextEditingController(text: "${widget.userModel?.firstname ?? ""} ${widget.userModel?.lastname ?? ""}");
     _companyController = TextEditingController(text: widget.userModel?.company);
@@ -473,7 +470,9 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                                 customer.status = widget.userModel?.status;
                                 customer.vendor_id = widget.userModel?.vendorId;
                                 customer.country_id = countryListModel?.id;
-                                if(customer.telephone != userModel?.telephone){
+                                // Only a different number needs the WhatsApp OTP;
+                                // the saved one has a "+" this one lacks.
+                                if(!PhoneNumber.same(customer.telephone, userModel?.telephone)){
                                   Map<String, dynamic> params = {
                                     "mobile":"${customer.telephone}",
                                     "type": "VENDOR_UPDATEMOB"
