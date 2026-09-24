@@ -151,7 +151,6 @@ class CreateEditProductApiService {
   }) async {
     try {
       var token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey);
-      print(token);
       http.Response response;
       if(isUpdate){
         response = await _httpClient.put(
@@ -327,7 +326,6 @@ class CreateEditProductApiService {
     try {
 
       var token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey);
-      print(token);
       print(mediaGalleryEntry.toJson());
       if ((mediaGalleryEntry.types?.length ?? 0)>0){
         mediaGalleryEntry.types = [];
