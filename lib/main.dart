@@ -207,7 +207,7 @@ class _MainAppState extends State<MainApp> {
             const Locale('ar', ''), // Arabic, no country code
           ],
           locale: _locale,
-          title: 'MN Atelier',
+          title: kAppName,
           navigatorKey: navigatorKey,
           theme: ThemeData(
             fontFamily: selectedLanguage == 'ar' ?'Tajawal':'Roboto',

@@ -361,7 +361,7 @@
 				DEVELOPMENT_TEAM = MJXU33SWC4;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Magento Egypt Multi Vendor";
+				INFOPLIST_KEY_CFBundleDisplayName = "ME Hub Market";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -499,7 +499,7 @@
 				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 544Y9RU66L;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Magento Egypt Multi Vendor";
+				INFOPLIST_KEY_CFBundleDisplayName = "ME Hub Market";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -532,7 +532,7 @@
 				DEVELOPMENT_TEAM = 544Y9RU66L;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "Magento Egypt Multi Vendor";
+				INFOPLIST_KEY_CFBundleDisplayName = "ME Hub Market";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
