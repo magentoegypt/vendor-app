@@ -100,7 +100,16 @@ class _SignInViewState extends State<SignInView> {
       body:SafeArea(
         child: GestureDetector(
           onTap: () => Tools.hideKeyboard(context),
-          child:  SingleChildScrollView(
+          child: LayoutBuilder(
+            builder: (context, viewport) => SingleChildScrollView(
+            // Anchored at the bottom: when the keyboard shrinks the screen, the
+            // fields, Reset Password, the login button and Create an account
+            // stay above it and the logo scrolls away instead.
+            reverse: true,
+            child: ConstrainedBox(
+            // At least a screen tall, so the form still starts at the top
+            // while the keyboard is closed.
+            constraints: BoxConstraints(minHeight: viewport.maxHeight),
             child: BlocListener<LoginBloc, LoginState>(
               listener: (context, state) async {
                 if (state is LoginLoading) {
@@ -368,6 +377,8 @@ class _SignInViewState extends State<SignInView> {
                   ],
                 ),
               ),
+            ),
+            ),
             ),
           ),
         ),
