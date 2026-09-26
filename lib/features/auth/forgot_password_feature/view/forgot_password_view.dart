@@ -73,7 +73,15 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
       body:SafeArea(
         child: GestureDetector(
           onTap: () => Tools.hideKeyboard(context),
-          child:  SingleChildScrollView(
+          child: LayoutBuilder(
+            builder: (context, viewport) => SingleChildScrollView(
+            // As on the login page: anchored at the bottom so the field and
+            // Get code / Get password link stay above the keyboard.
+            reverse: true,
+            child: ConstrainedBox(
+            // At least a screen tall, so the page still starts at the top
+            // while the keyboard is closed.
+            constraints: BoxConstraints(minHeight: viewport.maxHeight),
             child: BlocListener<ForgotPasswordBloc, ForgotPasswordState>(
               listener: (context, state) async {
                 if (state is ForgotPasswordLoading) {
@@ -255,6 +263,8 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
                   ],
                 ),
               ),
+            ),
+            ),
             ),
           ),
         ),
