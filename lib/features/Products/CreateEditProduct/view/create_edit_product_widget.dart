@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +22,7 @@ import '../../../../core/helper/loading_screen.dart';
 import '../../../../core/helper/shared_preferences_helpers.dart';
 import '../../../../core/utils/json_parser.dart';
 import '../../../../core/utils/numeric_input_formatter.dart';
+import '../../../../core/utils/product_url_key.dart';
 import '../bloc/create_edit_product_bloc.dart';
 import '../bloc/create_edit_product_event.dart';
 import '../bloc/create_edit_product_state.dart';
@@ -59,7 +59,9 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
   ProductAttributeModel attributeproductAttributeModel = ProductAttributeModel();
   ProductAttributeModel quantityAttributeModel = ProductAttributeModel();
   ProductAttributeModel galleryproductAttributeModel = ProductAttributeModel();
-  List<String> skipAttributeName = ["credit_type","credit_value_fixed","credit_value_dropdown",
+  // "approval" is the admin's decision: the web vendor panel does not offer
+  // it, and new products are queued as Pending New without it.
+  List<String> skipAttributeName = ["approval","credit_type","credit_value_fixed","credit_value_dropdown",
     "credit_value_custom","credit_price","credit_rate","links_exist","quantity_and_stock_status","select_from_product_id",
     "links_title","samples_title","links_purchased_separately","image_label","shipment_type","page_layout",
     "special_price","gift_message_available","extragallery_glr_type","mgs_template","mgs_image_dimention",
@@ -840,7 +842,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                 print(json.encode(data));
                                 context.read<CreateEditProductBloc>().add(PerformSaveProduct(requestValueMap: data,isUpdate:true));
                               }else{
-                                custom_attributes['url_key'] = generateRandomUrlKey(length: 100);
+                                custom_attributes['url_key'] = productUrlKey(product['name']?.toString(), product['sku']?.toString());
                                 List<Map<String, dynamic>> listcustomAttributes = [];
                                 custom_attributes.forEach((key,value){
                                   listcustomAttributes.add({
@@ -893,16 +895,6 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                 )),
           ),
         ));
-  }
-
-
-  String generateRandomUrlKey({String keyword = '', int length = 8}) {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    final random = Random();
-    final randomString = List.generate(length, (index) => chars[random.nextInt(chars.length)]).join();
-
-    // Combine the keyword and random string for SEO
-    return keyword.isNotEmpty ? '$keyword-$randomString' : randomString;
   }
 
 
