@@ -10,6 +10,11 @@ class LoadingScreen {
 
   LoadingScreenController? controller;
 
+  // The route whose screen showed the overlay. The overlay sits above every
+  // route, and the BlocListener that would hide it goes away with that screen,
+  // so leaving the screen mid-request left the spinner up for good.
+  Route<dynamic>? _owner;
+
   void show({
     required BuildContext context,
     required String text,
@@ -17,6 +22,7 @@ class LoadingScreen {
     if (controller?.update(text) ?? false) {
       return;
     } else {
+      _owner = ModalRoute.of(context);
       controller = showOverlay(
         context: context,
         text: text,
@@ -27,6 +33,17 @@ class LoadingScreen {
   void hide() {
     controller?.close();
     controller = null;
+    _owner = null;
+  }
+
+  /// Hides the overlay if [route], which is leaving the navigator, showed it.
+  /// Runs after the navigator finishes the pop, so a loader the next screen
+  /// shows in the meantime is left alone.
+  void routeGone(Route<dynamic>? route) {
+    if (route == null || !identical(route, _owner)) return;
+    scheduleMicrotask(() {
+      if (identical(route, _owner)) hide();
+    });
   }
 
   LoadingScreenController showOverlay({
@@ -78,4 +95,20 @@ class LoadingScreen {
       },
     );
   }
+}
+
+/// Hides the loading overlay when the screen that showed it leaves before its
+/// request finishes, e.g. back from Products, Orders or the profile.
+class LoadingScreenObserver extends NavigatorObserver {
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      LoadingScreen().routeGone(route);
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) =>
+      LoadingScreen().routeGone(route);
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) =>
+      LoadingScreen().routeGone(oldRoute);
 }

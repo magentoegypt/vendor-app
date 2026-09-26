@@ -142,16 +142,20 @@ class AppDrawer extends StatelessWidget {
         ],
       ),
       onTap: () {
+        // Close the menu first, so back from the opened screen lands on the
+        // dashboard rather than on the menu still spread over it.
+        final navigator = Navigator.of(context);
+        Scaffold.maybeOf(context)?.closeDrawer();
         if(index == 1){
-          Navigator.of(context).push(CupertinoPageRoute(
+          navigator.push(CupertinoPageRoute(
               builder: (context) =>  ProfileViewWidget(userModel: userModel,))).then((value){
             _createHeader(context,true);
           });
         }else if(index == 2){
-          Navigator.of(context).push(CupertinoPageRoute(
+          navigator.push(CupertinoPageRoute(
               builder: (context) => ProductsWidget()));
         }else if(index == 3){
-          Navigator.of(context).push(CupertinoPageRoute(
+          navigator.push(CupertinoPageRoute(
               builder: (context) => OrdersWidget()));
         }else if(index == 4){
           _showSimpleDialog(context);

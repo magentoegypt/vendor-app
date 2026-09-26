@@ -10,6 +10,7 @@ import 'core/config/app_constants.dart';
 import 'core/config/colors.dart';
 import 'core/config/locator.dart';
 import 'core/helper/api_response_helper.dart';
+import 'core/helper/loading_screen.dart';
 import 'core/helper/shared_preferences_helpers.dart';
 import 'core/ui/setup_snackbar_ui.dart';
 import 'features/Orders/OrderList/bloc/orders_bloc.dart';
@@ -209,6 +210,7 @@ class _MainAppState extends State<MainApp> {
           locale: _locale,
           title: kAppName,
           navigatorKey: navigatorKey,
+          navigatorObservers: [LoadingScreenObserver()],
           theme: ThemeData(
             fontFamily: selectedLanguage == 'ar' ?'Tajawal':'Roboto',
            // fontFamily:,
