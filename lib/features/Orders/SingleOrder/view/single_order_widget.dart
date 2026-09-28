@@ -2,7 +2,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:multi_vendor/core/config/app_constants.dart';
 import 'package:multi_vendor/features/Orders/SingleOrder/bloc/single_order_event.dart';
 import '../../../../common/AppBars.dart';
 import '../../../../core/config/locator.dart';
@@ -188,19 +187,19 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _buildSectionHeader(AppLocalizations.of(context)!.orderTotal),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.subtotal, getStringWithCurrencyCode(orderModel?.baseSubtotal)),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.shippingHandling, getStringWithCurrencyCode(orderModel?.baseShippingAmount)),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.subtotal, getStringWithCurrencyCode(orderModel?.baseSubtotal, base: true)),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.shippingHandling, getStringWithCurrencyCode(orderModel?.baseShippingAmount, base: true)),
                                   Container(
                                     margin: EdgeInsets.symmetric(vertical: 7.0),
                                     height: 1, // Set the height to 1 pixel
                                     width: double.infinity, // Stretch the line across the width
                                     color: Colors.black, // Set your desired color
                                   ),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.grandTotal, getStringWithCurrencyCode(orderModel?.baseGrandTotal)),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.totalPaid, getStringWithCurrencyCode(orderModel?.baseTotalPaid)),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.totalRefunded, getStringWithCurrencyCode(orderModel?.baseTotalRefunded)),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.marketplaceCommission, getStringWithCurrencyCode(orderModel?.commission)),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.totalDue, getStringWithCurrencyCode(orderModel?.baseTotalDue)),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.grandTotal, getStringWithCurrencyCode(orderModel?.baseGrandTotal, base: true)),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.totalPaid, getStringWithCurrencyCode(orderModel?.baseTotalPaid, base: true)),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.totalRefunded, getStringWithCurrencyCode(orderModel?.baseTotalRefunded, base: true)),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.marketplaceCommission, getStringWithCurrencyCode(orderModel?.commission, base: true)),
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.totalDue, getStringWithCurrencyCode(orderModel?.baseTotalDue, base: true)),
                                 ],
                               ),
                             ),
@@ -370,9 +369,13 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
     );
   }
 
-  String getStringWithCurrencyCode(dynamic amount){
-   final title = Tools.formatPrice(amount ?? 0);
-   return selectedLanguage == 'ar' ? '$title ${AppLocalizations.of(context)!.currencyEGP}':'${AppLocalizations.of(context)!.currencyEGP}$title';
+  /// Order totals are base_* amounts ([base]); item prices are in the order
+  /// currency. Both used to be labelled EGP whatever the order was in.
+  String getStringWithCurrencyCode(dynamic amount, {bool base = false}){
+    final currency = base
+        ? (orderModel?.baseCurrencyCode ?? orderModel?.orderCurrencyCode)
+        : (orderModel?.orderCurrencyCode ?? orderModel?.baseCurrencyCode);
+    return Tools.getCurrencyCode(amount ?? 0, currency: currency);
   }
 
   String _paymentInformation() {

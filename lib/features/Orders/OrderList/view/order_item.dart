@@ -85,7 +85,7 @@ class OrderItem extends StatelessWidget {
                     fontSize: 12.0),
               )),
               Expanded(
-                  child: Text("${Tools.getCurrencyCode(order.grandTotal ?? 0)}",
+                  child: Text("${Tools.getCurrencyCode(order.grandTotal ?? 0, currency: order.orderCurrencyCode)}",
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 12.0),
                   )),

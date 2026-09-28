@@ -10,7 +10,8 @@ import '../config/app_constants.dart';
  // Seller-only endpoints: PUT updates and DELETE removes the signed-in vendor.
  String vendorUpdateDataApi = '$apiBaseUrl/rest/$selectedLanguage/V1/vendors/me';
 String vendorDeleteDataApi = '$apiBaseUrl/rest/$selectedLanguage/V1/vendors/me';
- String dashboardApi = '$apiBaseUrl/rest/$selectedLanguage/V1/vendors/dashboard';
+// period: 24h, 7d, 1m, 1y or 2y; the sales chart shows a week.
+ String dashboardApi = '$apiBaseUrl/rest/$selectedLanguage/V1/vendors/dashboard?period=7d';
  String vendorsOrderListApi = '$apiBaseUrl/rest/$selectedLanguage/V1/vendors/order?';
  String vendorsSingleOrderApi = '$apiBaseUrl/rest/$selectedLanguage/V1/vendor/order/';
  String vendorsProductsListApi = '$apiBaseUrl/rest/$selectedLanguage/V1/vendors/product?';
@@ -24,3 +25,8 @@ String vendorsProductCategoriesApi = '$apiBaseUrl/rest/$selectedLanguage/V1/vend
  String sendOTPApi = '$apiBaseUrl/rest/$selectedLanguage/V1/whatsapp/otp/send';
 String verifyOTPApi = '$apiBaseUrl/rest/$selectedLanguage/V1/whatsapp/otp/verify';
 String forgotPasswordApi = '$apiBaseUrl/rest/$selectedLanguage/V1/customers/password';
+
+/// Orders newest first. Magento's default order is oldest first, which put
+/// Sep 13 orders under "Latest Sales" while the web panel showed Sep 26.
+const String newestOrdersFirst =
+    'searchCriteria[sortOrders][0][field]=created_at&searchCriteria[sortOrders][0][direction]=DESC';

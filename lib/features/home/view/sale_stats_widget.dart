@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../core/config/locator.dart';
 
 
 class SaleStatsWidget extends StatelessWidget {
@@ -20,59 +19,50 @@ class SaleStatsWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.only(top: 20.0, bottom: 10.0),
+        padding: const EdgeInsets.fromLTRB(12.0, 20.0, 12.0, 10.0),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10.0),
           color: color ?? Theme.of(context).primaryColorLight,
           gradient: gradient,
         ),
         height: 120,
-        child: Stack(
-          children: [
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 12.0,
-                      fontWeight: FontWeight.w500,
-                      color: gradient != null
-                          ? Colors.white
-                          : Theme.of(context).colorScheme.secondary,
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    amount,
-                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: gradient != null
-                              ? Colors.white
-                              : Theme.of(context).colorScheme.secondary,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            if (gradient == null)
-              Align(
-                alignment: Alignment.topRight,
-                child: Container(
-                  height: 10,
-                  width: 20,
-                  decoration: BoxDecoration(
-                    color: title == AppLocalizations.of(context)!.earnings
-                        ? Colors.red
-                        : Colors.blue,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+        // The small blue tab that sat in the top-right corner is gone: it had
+        // no function and covered the label in Arabic.
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 12.0,
+                  fontWeight: FontWeight.w500,
+                  color: gradient != null
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.secondary,
                 ),
               ),
-          ],
+              const SizedBox(height: 5),
+              // One line whatever the amount: "AED 24,993.00" used to break
+              // before ".00". Long amounts shrink to fit the card instead.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  amount,
+                  maxLines: 1,
+                  style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: gradient != null
+                            ? Colors.white
+                            : Theme.of(context).colorScheme.secondary,
+                      ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

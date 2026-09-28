@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 import '../utils/json_parser.dart';
+import '../utils/money.dart';
 import 'app_constants.dart';
 import 'locator.dart';
 
@@ -251,11 +252,10 @@ class Tools {
     }
   }
 
-  static String getCurrencyCode(dynamic number){
-    if(selectedLanguage == "ar")
-      return "${formatPrice(number)} ج.م.";
-    else
-      return "EGP${formatPrice(number)}";
+  /// [number] with its currency: [currency] when the data carries one (an
+  /// order's currency code), otherwise the store's (AED on Hub Market).
+  static String getCurrencyCode(dynamic number, {String? currency}){
+    return Money.format(number, currency: currency, language: selectedLanguage);
   }
 
   /// Money for display with two decimals: 149.95, 100.00.

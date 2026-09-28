@@ -4,3 +4,5 @@ const String userIDPrefKey = 'userID';
 const String userPrefKey = 'user';
 const String initScreenPrefKey = "initScreen";
 const String isFirstLaunchPrefKey = "isFirstLaunch";
+const String storeCurrencyPrefKey = 'storeCurrency';
+const String storeCurrencySymbolPrefKey = 'storeCurrencySymbol';

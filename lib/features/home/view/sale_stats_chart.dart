@@ -1,9 +1,8 @@
 
-import 'dart:ffi';
+import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../data/DashboarModel.dart';
 
 
@@ -18,15 +17,6 @@ class SaleStatsChart extends StatelessWidget {
       barsSpace: 2,
       x: x,
       barRods: [
-          // BarChartRodData(
-          //   toY: y1,
-          //   color: Colors.blue,
-          //   width: size,
-          //   borderRadius: const BorderRadius.only(
-          //     topRight: Radius.circular(1.0),
-          //     topLeft: Radius.circular(1.0),
-          //   ),
-          // ),
         BarChartRodData(
           toY: y2,
           color: Colors.blue,
@@ -40,102 +30,114 @@ class SaleStatsChart extends StatelessWidget {
     );
   }
 
+  /// Whole-number steps for an order count, about five of them: 1 up to 5
+  /// orders, then 2, 3, ...
+  static double orderStep(num highest) =>
+      math.max(1, (highest / 5).ceil()).toDouble();
+
+  /// "2026-9-27" -> "9-27": the year is the same on every bar and made the
+  /// labels too wide to fit a week across the card.
+  static String shortDate(String? date) =>
+      RegExp(r'^\d{4}-(.+)$').firstMatch(date ?? '')?.group(1) ?? (date ?? '');
+
+  /// Whether bar [index] of [count] gets a date: every bar up to ten days,
+  /// otherwise every n-th counting back from the latest, which always does.
+  static bool labelsDay(int index, int count) =>
+      (count - 1 - index) % math.max(1, (count / 10).ceil()) == 0;
+
   @override
   Widget build(BuildContext context) {
-    var barChartGroupDataList = <BarChartGroupData>[];
-    if (saleStats != null) {
-      for (int index = 0;index<saleStats!.length;index++){
-        barChartGroupDataList.add(makeGroupData(
-            index,
-            0,
-            (saleStats![index].numberOfOrder ?? 0).toDouble()));
-      }
+    final stats = saleStats ?? const <OrderChartData>[];
+    final groups = [
+      for (var i = 0; i < stats.length; i++)
+        makeGroupData(i, 0, (stats[i].numberOfOrder ?? 0).toDouble()),
+    ];
+    final highest = stats.fold<num>(0, (m, day) => math.max(m, day.numberOfOrder ?? 0));
+    final step = orderStep(highest);
 
-    }
-
-    return SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-      child:Container(
+    // The whole range fits the card: it used to scroll sideways, opening on
+    // the oldest days in English and scrolling the Y axis out of view in
+    // Arabic. Dates run left to right in both languages.
+    return Container(
       height: 260,
-      width: (saleStats?.length ?? 0)*70 < MediaQuery.of(context).size.width - 30 ? MediaQuery.of(context).size.width-30:(saleStats?.length ?? 0)*70,
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 10),
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(9.0),
           color: Theme.of(context).colorScheme.surface,
           border: Border.all(color: Colors.grey)),
-      child: BarChart(
-        BarChartData(
-          titlesData: FlTitlesData(
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                getTitlesWidget: (double value, TitleMeta meta) =>
-                    bottomTitles(value, meta, context),
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: BarChart(
+          BarChartData(
+            minY: 0,
+            maxY: math.max(step, (highest / step).ceil() * step),
+            titlesData: FlTitlesData(
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 26,
+                  getTitlesWidget: (double value, TitleMeta meta) =>
+                      bottomTitles(value, meta, context, stats),
+                ),
+              ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 32,
+                  interval: step,
+                  getTitlesWidget: leftTitles,
+                ),
               ),
             ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 50,
-                /// Comment code to avoid related issue - https://github.com/imaNNeo/fl_chart/issues/1210
-                /// Texts are showing with provided [interval].
-                /// If you don't provide anything, we try to find a suitable value to set as [interval] under the hood.
-                //interval: 40,
-                getTitlesWidget: (double value, TitleMeta meta) =>
-                    leftTitles(context, value, meta),
-              ),
-            ),
+            barTouchData: BarTouchData(enabled: false),
+            borderData: FlBorderData(
+                border: const Border(
+              bottom: BorderSide(width: 1.0, color: Colors.grey),
+            )),
+            barGroups: groups,
+            gridData: FlGridData(
+                drawHorizontalLine: true,
+                drawVerticalLine: false,
+                horizontalInterval: step),
+            alignment: BarChartAlignment.spaceAround,
           ),
-          barTouchData: BarTouchData(enabled: false),
-          borderData: FlBorderData(
-              border: const Border(
-            bottom: BorderSide(width: 1.0, color: Colors.grey),
-          )),
-          barGroups: barChartGroupDataList,
-          gridData: const FlGridData(
-              drawHorizontalLine: true, drawVerticalLine: false),
-          alignment: BarChartAlignment.spaceAround,
         ),
-      )
       ),
     );
   }
 
-  Widget leftTitles(BuildContext context, double value, TitleMeta meta) {
+  /// Order counts: whole numbers only ("3", not "3.0").
+  Widget leftTitles(double value, TitleMeta meta) {
+    if (value != value.roundToDouble()) return const SizedBox.shrink();
+    return SideTitleWidget(
+      axisSide: meta.axisSide,
+      child: Text(value.toInt().toString(), style: const TextStyle(fontSize: 11)),
+    );
+  }
 
-    Widget axisTitle = Text(value.toString(),
-        style: const TextStyle(
-          fontSize: 11,
-        ));
-    if (value == meta.max) {
-      final remainder = value % meta.appliedInterval;
-      if (remainder != 0.0 && remainder / meta.appliedInterval < 0.5) {
-        axisTitle = const SizedBox.shrink();
-      }
+  Widget bottomTitles(double value, TitleMeta meta, BuildContext context,
+      List<OrderChartData> stats) {
+    final index = value.toInt();
+    if (index < 0 || index >= stats.length || !labelsDay(index, stats.length)) {
+      return const SizedBox.shrink();
     }
-
-    return SideTitleWidget(axisSide: meta.axisSide, child: axisTitle);
-  }
-
-  Widget bottomTitles(double value, TitleMeta meta, BuildContext context) {
-    final Widget text = Text(
-      saleStats?[value.toInt()].time ?? "",
-      style: TextStyle(
-        fontSize: 9,
-        color: Theme.of(context).colorScheme.secondary,
-      ),
-    );
-
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 7, //margin top
-      child: text,
+      child: Text(
+        shortDate(stats[index].time),
+        style: TextStyle(
+          fontSize: 10,
+          color: Theme.of(context).colorScheme.secondary,
+        ),
+      ),
     );
   }
 }

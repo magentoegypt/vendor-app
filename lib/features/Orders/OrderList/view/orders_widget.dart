@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../common/AppBars.dart';
 import '../../../../core/config/locator.dart';
 import '../../../../core/config/tools.dart';
+import '../../../../core/helper/api_url_helpers.dart';
 import '../../../../core/helper/loading_screen.dart';
 import '../../../../core/helper/shared_preferences_helpers.dart';
 import '../../../home/view/vendor_order_list.dart';
@@ -34,7 +35,7 @@ class _OrdersViewState extends State<OrdersWidget> {
   @override
   void initState() {
     super.initState();
-    context.read<OrdersBloc>().add(PerformOrdersList(query: 'searchCriteria[pageSize]=20'));
+    context.read<OrdersBloc>().add(PerformOrdersList(query: 'searchCriteria[pageSize]=20&$newestOrdersFirst'));
   }
 
   @override
@@ -45,7 +46,7 @@ class _OrdersViewState extends State<OrdersWidget> {
        // drawer: AppDrawer(),
         body: RefreshIndicator(
           onRefresh:  () async {
-            context.read<OrdersBloc>().add(PerformOrdersList(query: 'searchCriteria[pageSize]=20'));
+            context.read<OrdersBloc>().add(PerformOrdersList(query: 'searchCriteria[pageSize]=20&$newestOrdersFirst'));
           },
           child: Container(
             child: BlocListener<OrdersBloc, OrdersState>(

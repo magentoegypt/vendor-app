@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/config/pref_keys.dart';
+import '../../../core/helper/store_currency.dart';
 import '../../../core/config/tools.dart';
 import '../../../features/home/data/DashboarModel.dart';
 import '../../../features/home/view/sale_stats_chart.dart';
@@ -12,6 +13,7 @@ import '../../../features/home/view/vendor_order_list.dart';
 import '../../../common/AppBars.dart';
 import '../../../common/AppDrawer.dart';
 import '../../../core/config/locator.dart';
+import '../../../core/helper/api_url_helpers.dart';
 import '../../../core/helper/loading_screen.dart';
 import '../../../core/helper/shared_preferences_helpers.dart';
 import '../../Orders/OrderList/data/orderListModel.dart';
@@ -42,6 +44,9 @@ class _DashboardViewState extends State<DashboardWidget> {
     // TODO: implement initState
     super.initState();
     context.read<DashboardBloc>().add(const PerformDashboard());
+    StoreCurrency.load(onChanged: () {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -69,7 +74,9 @@ class _DashboardViewState extends State<DashboardWidget> {
                     setState(() {
                       dashboardModel = state.dashboarModel;
                       context.read<DashboardBloc>().add(PerformUserDetail());
-                      context.read<DashboardBloc>().add(PerformOrderList(query: 'searchCriteria[pageSize]=5'));
+                      // Newest first: without a sort order Magento returned the
+                      // oldest orders, so "Latest Sales" showed Sep 13-14.
+                      context.read<DashboardBloc>().add(PerformOrderList(query: 'searchCriteria[pageSize]=5&$newestOrdersFirst'));
                     });
                   }else if (state is UserLoaded) {
                     setState(() {
