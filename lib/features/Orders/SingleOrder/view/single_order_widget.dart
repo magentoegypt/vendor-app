@@ -9,6 +9,7 @@ import '../../../../core/config/tools.dart';
 import '../../../../core/helper/country_names.dart';
 import '../../../../core/helper/loading_screen.dart';
 import '../../../../core/helper/shared_preferences_helpers.dart';
+import '../../../../core/utils/bidi_text.dart';
 import '../../SingleOrder/bloc/single_order_state.dart';
 import '../../SingleOrder/data/OrderModel.dart';
 import '../bloc/single_order_bloc.dart';
@@ -99,7 +100,8 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                               _buildSectionHeader(AppLocalizations.of(context)!.orderAccountInformation),
                              // _buildRow('Order #', '000000017 (The order confirmation email is not sent)'),
                               _buildRow(AppLocalizations.of(context)!.orderNo, orderModel?.incrementId ?? '', singleLine: true),
-                              _buildRow(AppLocalizations.of(context)!.orderDate, orderDate == null ? '' : DateFormat('d MMM yyyy, hh:mm:ss a').format(orderDate!.toLocal())),
+                              // An English date: kept left to right, or Arabic layout moves the day to the end.
+                              _buildRow(AppLocalizations.of(context)!.orderDate, orderDate == null ? '' : BidiText.leftToRight(DateFormat('d MMM yyyy, hh:mm:ss a').format(orderDate!.toLocal()))),
                               _buildRow(AppLocalizations.of(context)!.orderstatus, Tools.getOrderStatus(context,orderModel?.status ?? "")),
                               // _buildRow('Purchased From', 'Main Website Store - Arabic'),
                               Container(
