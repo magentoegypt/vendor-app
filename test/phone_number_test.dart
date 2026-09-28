@@ -19,4 +19,17 @@ void main() {
       expect(PhoneNumber.same('201002004489', '+201002004488'), isFalse);
     });
   });
+
+  group('Seller profile phone (14zb93nv6vw)', () {
+    test('every form the backend accepts is the same number, so no code is asked for',
+        () {
+      // What the update builds against each form a profile may have kept.
+      for (final saved in ['+20 111 400 7802', '+201114007802', '201114007802',
+          '01114007802', '1114007802']) {
+        expect(PhoneNumber.same('201114007802', saved), isTrue, reason: saved);
+      }
+      expect(PhoneNumber.same('201114007803', '01114007802'), isFalse);
+      expect(PhoneNumber.same('201114007802', null), isFalse);
+    });
+  });
 }

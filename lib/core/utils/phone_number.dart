@@ -15,8 +15,13 @@ class PhoneNumber {
     return number.startsWith('0') ? number.substring(1) : number;
   }
 
-  /// Whether two telephones are the same number, ignoring "+" and spacing.
-  static bool same(String? a, String? b) => digits(a) == digits(b);
+  /// Whether two telephones are the same number in any of the forms the
+  /// backend accepts: "+20 100…", "20100…", "0100…" and "100…" are one number.
+  /// Comparing the digits alone took a saved "01114007802" for a new number,
+  /// so an unchanged number asked for a WhatsApp code, and got "Mobile number
+  /// already exists." for the seller's own number.
+  static bool same(String? a, String? b, {String dialCode = '+20'}) =>
+      local(a, dialCode: dialCode) == local(b, dialCode: dialCode);
 
   static String digits(String? value) =>
       (value ?? '').replaceAll(RegExp(r'\D'), '');
