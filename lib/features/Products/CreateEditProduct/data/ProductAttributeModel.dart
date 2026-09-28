@@ -96,3 +96,22 @@ class Options {
     return data;
   }
 }
+
+/// The label of the option whose value is [value]. Option values are strings
+/// ("2") while a product's status and visibility are ints (2), so they are
+/// compared as text.
+String? optionLabelFor(List<Options>? options, Object? value) {
+  if (value == null) return null;
+  for (final option in options ?? const <Options>[]) {
+    if (option.value == value.toString()) return option.label;
+  }
+  return null;
+}
+
+/// The value of the option labelled [label].
+String? optionValueFor(List<Options>? options, Object? label) {
+  for (final option in options ?? const <Options>[]) {
+    if (option.label == label) return option.value;
+  }
+  return null;
+}

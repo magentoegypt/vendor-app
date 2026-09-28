@@ -272,17 +272,12 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
       }else if(attributeModel.attributeCode == "product_quantity"){
         attributeModel.value = productItem?.stockItemQunatityModel?.qty;
       }else if(attributeModel.attributeCode == "status"){
-        attributeModel.options?.forEach((option)  async {
-          if(option.value == productItem?.status){
-            attributeModel.value = option.label;
-          }
-        });
+        // Compared as ints and strings, the saved status never matched: a
+        // disabled product opened as "Enabled", the first option, and saving
+        // it enabled it again.
+        attributeModel.value = optionLabelFor(attributeModel.options, productItem?.status) ?? attributeModel.value;
       }else if(attributeModel.attributeCode == "visibility"){
-        attributeModel.options?.forEach((option) async {
-          if(option.value == productItem?.visibility){
-            attributeModel.value = option.label;
-          }
-        });
+        attributeModel.value = optionLabelFor(attributeModel.options, productItem?.visibility) ?? attributeModel.value;
       }else if(["multiselect","select"].contains(attributeModel.frontendInput)){
         productItem?.customAttributes?.forEach((attribute){
           if(attribute.attributeCode == attributeModel.attributeCode) {
@@ -341,12 +336,12 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
         if(attributeModel.value != productItem?.stockItemQunatityModel?.qty){
           attributes.add("stock_item");
         }
-      }else if(attributeModel.attributeCode == "status"){
-        if(attributeModel.value != productItem?.status){
-          attributes.add(attributeModel.attributeCode ?? "");
-        }
-      }else if(attributeModel.attributeCode == "visibility"){
-        if(attributeModel.value != productItem?.visibility){
+      }else if(attributeModel.attributeCode == "status" || attributeModel.attributeCode == "visibility"){
+        // The form holds the option's label ("Enabled"), the product its
+        // value (1): compare values, or these were listed on every save.
+        final chosen = optionValueFor(attributeModel.options, attributeModel.value);
+        final saved = attributeModel.attributeCode == "status" ? productItem?.status : productItem?.visibility;
+        if(chosen != null && chosen != saved?.toString()){
           attributes.add(attributeModel.attributeCode ?? "");
         }
       }else if(["multiselect","select"].contains(attributeModel.frontendInput)){
@@ -388,7 +383,9 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
             }
           }
         });
-        if(!isFound && attributeModel.value.toString().isNotEmpty && attributeModel.frontendInput != "gallery" && attributeModel.frontendInput != "media_image"  && !skipAttributeName.contains(attributeModel.attributeCode ?? "")){
+        // Only fields the form shows and has a value for: null.toString() is
+        // "null", which listed url_path, created_at and updated_at on every save.
+        if(!isFound && (attributeModel.value?.toString() ?? "").isNotEmpty && (attributeModel.defaultFrontendLabel ?? "").isNotEmpty && attributeModel.defaultFrontendLabel != "[]" && attributeModel.frontendInput != "gallery" && attributeModel.frontendInput != "media_image"  && !skipAttributeName.contains(attributeModel.attributeCode ?? "")){
           attributes.add(attributeModel.attributeCode ?? "");
         }
       }
