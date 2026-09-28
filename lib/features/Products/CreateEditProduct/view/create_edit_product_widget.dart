@@ -129,6 +129,117 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
     return null;
   }
 
+  /// SKUs end up in URLs, exports and CSV imports: English letters, digits,
+  /// "-" and "_" only.
+  static final _skuPattern = RegExp(r'^[A-Za-z0-9_-]+$');
+
+  // The field with a validation error, marked in red and scrolled into view.
+  // Errors used to be a toast over the Save button, with the field neither
+  // marked nor in view.
+  String? _errorCode;
+  String? _errorText;
+  final Map<String, GlobalKey> _fieldKeys = {};
+
+  GlobalKey _fieldKey(String? code) =>
+      _fieldKeys.putIfAbsent(code ?? '', () => GlobalKey());
+
+  String? _errorFor(ProductAttributeModel attribute) =>
+      _errorCode != null && _errorCode == attribute.attributeCode ? _errorText : null;
+
+  void _showFieldError(String? code, String message, {bool scroll = true}) {
+    if (!_fieldKeys.containsKey(code ?? '')) {
+      // Not a text field (a date or a dropdown): say it where it cannot be missed.
+      _showErrorDialog(message);
+      return;
+    }
+    setState(() {
+      _errorCode = code;
+      _errorText = message;
+    });
+    if (!scroll) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final field = _fieldKeys[code ?? '']?.currentContext;
+      if (field != null) {
+        Scrollable.ensureVisible(field,
+            duration: const Duration(milliseconds: 300), alignment: 0.1);
+      }
+    });
+  }
+
+  /// Errors with no field to mark. Not a toast: it covered the Save button.
+  void _showErrorDialog(String message) {
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: Text(AppLocalizations.of(context)!.ok),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _clearFieldError(String? code) {
+    if (_errorCode != null && _errorCode == code) {
+      setState(() {
+        _errorCode = null;
+        _errorText = null;
+      });
+    }
+  }
+
+  /// Checks the SKU as it is typed, so Arabic letters are flagged at once.
+  void _onFieldChanged(ProductAttributeModel attribute, dynamic value) {
+    attribute.value = value;
+    final text = value?.toString().trim() ?? '';
+    if (attribute.attributeCode == "sku" && text.isNotEmpty && !_skuPattern.hasMatch(text)) {
+      _showFieldError("sku", AppLocalizations.of(context)!.skuEnglishOnly, scroll: false);
+    } else {
+      _clearFieldError(attribute.attributeCode);
+    }
+  }
+
+  // The approval attribute's options (the field itself is hidden), to tell
+  // whether the product being edited is live on the store.
+  List<Options>? _approvalOptions;
+  bool _wasLive = false;
+
+  /// Whether the product is live: its approval option reads "Approved".
+  /// Saving an edit to a live product sends it to the admin as Pending Update,
+  /// and the store hides it until the edit is approved.
+  bool _isLive() {
+    String? value;
+    for (final attribute in productItem?.customAttributes ?? <CustomAttributes>[]) {
+      if (attribute.attributeCode == 'approval') value = attribute.value?.toString();
+    }
+    for (final option in _approvalOptions ?? <Options>[]) {
+      if (value != null && option.value == value) {
+        return option.label?.trim().toLowerCase() == 'approved';
+      }
+    }
+    return false;
+  }
+
+  /// Shows the attribute set in use. The dropdown showed the first set
+  /// ("333") whatever the form, and the saved product, used.
+  void _showAttributeSet() {
+    for (final set in attributelist) {
+      if (set.attributeSetId == attributeSetId) {
+        attributeproductAttributeModel.value = set.attributeSetName;
+        return;
+      }
+    }
+  }
+
+  void _useAttributeSet(int setId) {
+    attributeSetId = setId;
+    _showAttributeSet();
+    context.read<CreateEditProductBloc>().add(PerformProductAttributeList(query: '$attributeSetId/attributes'));
+  }
+
   @override
   void initState() {
     // TODO: implement initState
@@ -313,6 +424,9 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                          if(!skipAttributeName.contains(object.attributeCode)){
                            list.add(object);
                          }
+                         if(object.attributeCode == 'approval'){
+                           _approvalOptions = object.options;
+                         }
                       });
                      // list = state.productAttributeModel;
                       list.forEach((_){
@@ -376,6 +490,14 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                   }else if (state is ProductsAttributeSetLoaded) {
                     setState(() {
                       attributelist = state.productAttributeSetList;
+                      final offered = attributelist.any((set) => set.attributeSetId == attributeSetId);
+                      if (!offered && attributelist.isNotEmpty && widget.productSku.isEmpty) {
+                        // The default set is not one this vendor can use: start a
+                        // new product on the first offered set, as shown.
+                        _useAttributeSet(attributelist.first.attributeSetId ?? attributeSetId);
+                      } else {
+                        _showAttributeSet();
+                      }
                     });
                   }else if (state is ProductCategoriesLoaded) {
                     treeListData.clear();
@@ -386,6 +508,23 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
 
                     });
                   }else if (state is SaveProductLoaded) {
+                    if (_wasLive) {
+                      // The edit waits for the admin, and the store hides the
+                      // product meanwhile: say so before going back.
+                      await showDialog<void>(
+                        context: context,
+                        builder: (dialogContext) => AlertDialog(
+                          content: Text(AppLocalizations.of(context)!.pendingUpdateNotice),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(dialogContext).pop(),
+                              child: Text(AppLocalizations.of(context)!.ok),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (!context.mounted) return;
+                    }
                     Navigator.pop(context);
                   }else if (state is SingleProductLoaded) {
                     setState(() {
@@ -399,10 +538,21 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                       });
                       setData();
                       context.read<CreateEditProductBloc>().add(const PerformProductCategories());
+                      // Open the product in its own attribute set: the form always
+                      // loaded set 4, whatever the product was saved with.
+                      final setId = productItem?.attributeSetId;
+                      if (setId != null && setId != attributeSetId) {
+                        _useAttributeSet(setId);
+                      }
                     });
                   }
                   if (state is ProductsError) {
-                    Tools.showSnackBar(ScaffoldMessenger.of(context),state.errorMessage);
+                    if (state.errorMessage.contains('SKU') && list.any((a) => a.attributeCode == 'sku')) {
+                      // e.g. 'The SKU "1223" is already used by another product.'
+                      _showFieldError('sku', state.errorMessage);
+                    } else {
+                      _showErrorDialog(state.errorMessage);
+                    }
                   }
                 },
                 child:SafeArea(
@@ -437,11 +587,11 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                               }else if((list[index].attributeCode ?? "") == "product_quantity"){
                                 final attribute = list[index];
                                 return EditProductInfoWidget(
+                                  key: _fieldKey(attribute.attributeCode),
+                                  errorText: _errorFor(attribute),
                                   controller: _controllerFor(attribute),
                                   label: attribute.defaultFrontendLabel ?? "",
-                                  onChanged: (val) {
-                                    attribute.value = val;
-                                  },
+                                  onChanged: (val) => _onFieldChanged(attribute, val),
                                   keyboardType: TextInputType.number,
                                   inputFormatters: [NumericInputFormatter(decimal: false)],
                                 );
@@ -494,33 +644,33 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                     // is editable when creating but fixed once saved.
                                     final enable = attribute.attributeCode != "sku" || widget.productSku.isEmpty;
                                   return EditProductInfoWidget(
+                                    key: _fieldKey(attribute.attributeCode),
+                                    errorText: _errorFor(attribute),
                                     controller: _controllerFor(attribute),
                                   label: attribute.defaultFrontendLabel ?? "",
-                                  onChanged: (val) {
-                                    attribute.value = val;
-                                  },
+                                  onChanged: (val) => _onFieldChanged(attribute, val),
                                   keyboardType: TextInputType.multiline,
                                     enable: enable,
                                   );
                                 case "textarea":
                                   final attribute = list[index];
                                   return EditProductInfoWidget(
+                                    key: _fieldKey(attribute.attributeCode),
+                                    errorText: _errorFor(attribute),
                                     controller: _controllerFor(attribute),
                                     label: attribute.defaultFrontendLabel ?? "",
-                                    onChanged: (val) {
-                                      attribute.value = val;
-                                    },
+                                    onChanged: (val) => _onFieldChanged(attribute, val),
                                     isMultiline: true,
                                     keyboardType: TextInputType.multiline,
                                   );
                                 case "price" || "weight":
                                   final attribute = list[index];
                                   return EditProductInfoWidget(
+                                    key: _fieldKey(attribute.attributeCode),
+                                    errorText: _errorFor(attribute),
                                     controller: _controllerFor(attribute),
                                     label: attribute.defaultFrontendLabel ?? "",
-                                    onChanged: (val) {
-                                      attribute.value = val;
-                                    },
+                                    onChanged: (val) => _onFieldChanged(attribute, val),
                                     // TextInputType.number has no decimal key on iOS.
                                     keyboardType: const TextInputType.numberWithOptions(decimal: true),
                                     inputFormatters: [NumericInputFormatter()],
@@ -688,14 +838,32 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                     (list[index].defaultFrontendLabel ?? "").isEmpty ||
                                     list[index].defaultFrontendLabel  == "[]" ||
                                     list[index].attributeCode  == "sku") {
-
+                                  // A new product needs an SKU typed by the vendor, in
+                                  // English letters and digits; an empty one used to
+                                  // fall back to the (often Arabic) name.
+                                  if(list[index].attributeCode == "sku" && widget.productSku.isEmpty){
+                                    final sku = _enteredSku();
+                                    if(sku == null){
+                                      _showFieldError("sku", "${list[index].defaultFrontendLabel ?? AppLocalizations.of(context)!.sku} ${AppLocalizations.of(context)!.isrequired}");
+                                      return;
+                                    }
+                                    if(!_skuPattern.hasMatch(sku)){
+                                      _showFieldError("sku", AppLocalizations.of(context)!.skuEnglishOnly);
+                                      return;
+                                    }
+                                  }
                                 }else{
+                                  // The server keeps names up to 255 characters.
+                                  if(list[index].attributeCode == "name" && (list[index].value?.toString().runes.length ?? 0) > 255){
+                                    _showFieldError("name", AppLocalizations.of(context)!.productNameTooLong);
+                                    return;
+                                  }
                                   if((list[index].isRequired ?? false) && (list[index].value == null || list[index].value.toString().trim().isEmpty)){
-                                    Tools.showSnackBar(ScaffoldMessenger.of(context),"${list[index].defaultFrontendLabel} ${AppLocalizations.of(context)!.isrequired}");
+                                    _showFieldError(list[index].attributeCode, "${list[index].defaultFrontendLabel} ${AppLocalizations.of(context)!.isrequired}");
                                     return;
                                   }
                                   if(_isNumeric(list[index]) && (list[index].value?.toString() ?? "").isNotEmpty && JsonParser.toNum(list[index].value) == null){
-                                    Tools.showSnackBar(ScaffoldMessenger.of(context),"${list[index].defaultFrontendLabel} ${AppLocalizations.of(context)!.invalidNumber}");
+                                    _showFieldError(list[index].attributeCode, "${list[index].defaultFrontendLabel} ${AppLocalizations.of(context)!.invalidNumber}");
                                     return;
                                   }
                                   if(list[index].attributeCode == "sku"){
@@ -840,6 +1008,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                 data["attributes"] = attributes;
                                 data["product"] = product;
                                 print(json.encode(data));
+                                _wasLive = _isLive();
                                 context.read<CreateEditProductBloc>().add(PerformSaveProduct(requestValueMap: data,isUpdate:true));
                               }else{
                                 custom_attributes['url_key'] = productUrlKey(product['name']?.toString(), product['sku']?.toString());

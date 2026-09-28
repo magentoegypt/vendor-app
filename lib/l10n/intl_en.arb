@@ -1149,5 +1149,8 @@
 	 "vendorAccountUnavailable":"You signed in, but your vendor account could not be loaded. It may still be pending approval. Please contact support.",
 	 "sessionExpiredMessage":"Your session has expired. Please log in again.",
 	 "streetAddress":"Street Address",
-	 "zipPostalCode":"Zip/Postal Code"
+	 "zipPostalCode":"Zip/Postal Code",
+	 "skuEnglishOnly":"Use English letters, numbers, - and _ only.",
+	 "productNameTooLong":"Use 255 characters or fewer.",
+	 "pendingUpdateNotice":"Your changes were sent for approval. The product is hidden from the store until an admin approves them."
 }

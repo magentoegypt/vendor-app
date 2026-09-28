@@ -19,6 +19,8 @@ class EditProductInfoWidget extends StatelessWidget {
   final onTap;
   final focusNode;
   final Color? backgroundColor;
+  /// Shown under the field, which gets a red border.
+  final String? errorText;
 
   const EditProductInfoWidget({
     super.key,
@@ -35,10 +37,16 @@ class EditProductInfoWidget extends StatelessWidget {
     this.onChanged,
     this.onTap,
     this.focusNode,
-    this.backgroundColor
+    this.backgroundColor,
+    this.errorText,
   });
   @override
   Widget build(BuildContext context) {
+    final error = Theme.of(context).colorScheme.error;
+    final errorBorder = OutlineInputBorder(
+      borderSide: BorderSide(width: 1.5, color: error),
+      borderRadius: BorderRadius.circular(9.0),
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -83,6 +91,9 @@ class EditProductInfoWidget extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(9.0),
               ),
+              enabledBorder: errorText != null ? errorBorder : null,
+              focusedBorder: errorText != null ? errorBorder : null,
+              disabledBorder: errorText != null ? errorBorder : null,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10),
               fillColor:  backgroundColor ?? Theme.of(context).primaryColorLight,
@@ -97,6 +108,14 @@ class EditProductInfoWidget extends StatelessWidget {
             enabled: enable,
           ),
         ),
+        if (errorText != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              errorText!,
+              style: TextStyle(color: error, fontSize: 13),
+            ),
+          ),
       ],
     );
   }
