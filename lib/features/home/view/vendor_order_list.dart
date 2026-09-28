@@ -43,7 +43,10 @@ class VendorOrderList extends StatelessWidget {
           if(!isAllOrder)
           Row(
             children: [
+              // Two thirds of the row: in one third, with an empty third
+              // beside it, the Arabic title broke as "أحدث" / "المبيعات".
               Expanded(
+                flex: 2,
                 child: Text(
                   AppLocalizations.of(context)!.allOrders,
                   style: const TextStyle(
@@ -53,10 +56,6 @@ class VendorOrderList extends StatelessWidget {
                   textAlign: TextAlign.start,
                 ),
               ),
-              const Expanded(
-                  child: SizedBox(
-                width: 1,
-              )),
               Expanded(
                 child: GestureDetector(
                   key: const Key('seeAllOrdersButton'),
