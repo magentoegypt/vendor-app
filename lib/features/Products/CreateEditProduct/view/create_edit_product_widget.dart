@@ -936,13 +936,10 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                           "label": "Main Image",
                                           "position": index+1,
                                           "disabled": false,
-                                          "types": ["image","thumbnail"],
-                                          // "types": [
-                                          //   "image",
-                                          //   "small_image",
-                                          //   "thumbnail",
-                                          //   "swatch_image"
-                                          // ],
+                                          // Every role, as the admin gives a first image:
+                                          // without small_image, listings, the vendor
+                                          // page and search showed a placeholder.
+                                          "types": ["image","small_image","thumbnail","swatch_image"],
                                           "content": {
                                             "base64_encoded_data": base64,
                                             "name": imageName,
