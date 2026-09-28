@@ -3,6 +3,7 @@ import 'package:collection/collection.dart';
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:multi_vendor/common/AppDrawer.dart';
 import '../../../../core/config/extensions.dart';
@@ -64,6 +65,8 @@ class _ProfileViewState extends State<ProfileViewWidget> {
   Customer customer = Customer();
   List<CountryListModel> _list = [];
   CountryListModel? countryListModel;
+  /// The state picked from [countryListModel]'s list, when it has one.
+  CountryRegion? _region;
 
   @override
   void initState() {
@@ -181,6 +184,12 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                   setState(() {
                     _list = state.list;
                     countryListModel = _list.firstWhereOrNull((e) => e.id == widget.userModel?.countryId);
+                    _region = countryListModel?.regionFor(
+                        regionId: widget.userModel?.regionId, region: widget.userModel?.regionCode);
+                    if (_region != null) {
+                      customer.region = _region!.name;
+                      customer.region_id = _region!.id;
+                    }
                   });
                 }else if (state is ProfileLoaded) {
                   userModel = state.userInfo;
@@ -330,16 +339,49 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                               "${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.city}")
                       ),
                       const SizedBox(height: 5.0),
-                      CustomTextField(
-                          controller: _stateProvinceController,
-                          autofillHints: const [AutofillHints.familyName],
-                          focusNode: stateProvinceNode,
-                          nextNode: streetNode,
-                          showCancelIcon: true,
-                           onChanged: (value) => customer.region = value,
-                          decoration: _inputDecoration("${AppLocalizations.of(context)!.stateProvince}*",
-                              "${AppLocalizations.of(context)!.enter} ${AppLocalizations.of(context)!.stateProvince}")
+                      // Country first: the State / Province list depends on it.
+                      Container(
+                        margin: const EdgeInsets.only(top: 5),
+                        height: 20,
+                        child: Text("${AppLocalizations.of(context)!.country}*",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                       ),
+                      DropdownButton<CountryListModel>(
+                        value: countryListModel,
+                        icon: const Icon(Icons.arrow_drop_down),
+                        isExpanded: true,
+                        elevation: 16,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodySmall!
+                            .copyWith(color: Colors.black),
+                        underline: Container(
+                          height: 1,
+                          color: Colors.black,
+                        ),
+                        onChanged: (CountryListModel? newValue) {
+                          if (newValue?.id == countryListModel?.id) return;
+                          // The old state belongs to the old country.
+                          setState(() {
+                            countryListModel = newValue;
+                            _region = null;
+                            customer.region = null;
+                            customer.region_id = null;
+                            _stateProvinceController.clear();
+                          });
+                        },
+                        items: _list.map<DropdownMenuItem<CountryListModel>>((status) {
+                          return DropdownMenuItem<CountryListModel>(
+                            value: status,
+                            child: Text(
+                              selectedLanguage == "ar" ? status.fullNameLocale ?? "":status.fullNameEnglish ?? "",
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 5.0),
+                      _stateField(context),
                       const SizedBox(height: 5.0),
                       CustomTextField(
                           controller: _streetController,
@@ -398,6 +440,12 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                               fontSize: 12.0,
                               focusNode: phoneNumberNode,
                               keyboardType: TextInputType.phone,
+                              // Digits only ("." and "-" were accepted), at most the
+                              // 10 of a local number.
+                              inputFormatters: [
+                                NumericInputFormatter(decimal: false),
+                                LengthLimitingTextInputFormatter(10),
+                              ],
                               onChanged: (value) => customer.telephone = value,
                               backgroundColor: Colors.transparent,
                             ),),
@@ -415,43 +463,6 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                         ),
                       ),
 
-                      Container(
-                        margin: const EdgeInsets.only(
-                            left: 0,
-                            right: 0,
-                            top: 5,
-                            bottom: 0
-                        ),
-                        height: 20,
-                        child: Text("${AppLocalizations.of(context)!.country}",
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                      DropdownButton<CountryListModel>(
-                        value: countryListModel,
-                        icon: const Icon(Icons.arrow_drop_down),
-                        isExpanded: true,
-                        elevation: 16,
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodySmall!
-                            .copyWith(color: Colors.black),
-                        underline: Container(
-                          height: 1,
-                          color: Colors.black,
-                        ),
-                        onChanged: (CountryListModel? newValue) {
-                          setState(() => countryListModel = newValue);
-                        },
-                        items: _list.map<DropdownMenuItem<CountryListModel>>((status) {
-                          return DropdownMenuItem<CountryListModel>(
-                            value: status,
-                            child: Text(
-                              selectedLanguage == "ar" ? status.fullNameLocale ?? "":status.fullNameEnglish ?? "",
-                            ),
-                          );
-                        }).toList(),
-                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16.0),
                         child: Material(
@@ -484,7 +495,7 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                                   );
                                 }else{
                                   final Map<String, dynamic> data = new Map<String, dynamic>();
-                                  data['vendor'] = customer.toUpfateProfileJson();
+                                  data['vendor'] = customer.toUpfateProfileJson(withTelephone: false);
                                   '${data}'.log();
                                   context.read<ProfileBloc>().add(
                                     PerformUserProfile(
@@ -546,12 +557,18 @@ class _ProfileViewState extends State<ProfileViewWidget> {
 
   bool _allValidation() {
     bool isValid = true;
-    if ((customer.firstname ?? "").trim().isEmpty
-        || (customer.company ?? "").trim().isEmpty
-        || (customer.city ?? "").trim().isEmpty
-        || (customer.region ?? "").trim().isEmpty
-        || (customer.telephone ?? "").trim().isEmpty) {
-      Tools.showSnackBar(ScaffoldMessenger.of(context), AppLocalizations.of(context)!.allrequiredfields);
+    final l10n = AppLocalizations.of(context)!;
+    // Names the empty field; "Please enter some text in required fields." did not.
+    final missing = {
+      l10n.fullName: customer.firstname,
+      l10n.company: customer.company,
+      l10n.city: customer.city,
+      l10n.country: countryListModel?.id,
+      l10n.stateProvince: customer.region,
+      l10n.phone: customer.telephone,
+    }.entries.firstWhereOrNull((field) => (field.value ?? "").trim().isEmpty);
+    if (missing != null) {
+      Tools.showSnackBar(ScaffoldMessenger.of(context), "${missing.key} ${l10n.isrequired}");
       isValid = false;
     }else if ((customer.telephone ?? "").startsWith("0")) {
       Tools.showSnackBar(ScaffoldMessenger.of(context), AppLocalizations.of(context)!.validMobileWithout0);
@@ -564,6 +581,55 @@ class _ProfileViewState extends State<ProfileViewWidget> {
   }
 
 
+
+  /// A list of the country's states when the store has one, so the state
+  /// always belongs to the country; a text field otherwise.
+  Widget _stateField(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final regions = countryListModel?.availableRegions ?? const <CountryRegion>[];
+    if (regions.isEmpty) {
+      return CustomTextField(
+          controller: _stateProvinceController,
+          autofillHints: const [AutofillHints.addressState],
+          focusNode: stateProvinceNode,
+          nextNode: streetNode,
+          showCancelIcon: true,
+          onChanged: (value) {
+            customer.region = value;
+            customer.region_id = null;
+          },
+          decoration: _inputDecoration("${l10n.stateProvince}*",
+              "${l10n.enter} ${l10n.stateProvince}")
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text("${l10n.stateProvince}*", style: Theme.of(context).textTheme.titleMedium),
+        DropdownButton<CountryRegion>(
+          value: _region,
+          hint: Text("${l10n.enter} ${l10n.stateProvince}"),
+          icon: const Icon(Icons.arrow_drop_down),
+          isExpanded: true,
+          style: Theme.of(context).textTheme.bodySmall!.copyWith(color: Colors.black),
+          underline: Container(height: 1, color: Colors.black),
+          onChanged: (CountryRegion? region) {
+            setState(() {
+              _region = region;
+              customer.region = region?.name;
+              customer.region_id = region?.id;
+            });
+          },
+          items: regions
+              .map((region) => DropdownMenuItem<CountryRegion>(
+                    value: region,
+                    child: Text(region.name ?? region.code ?? ""),
+                  ))
+              .toList(),
+        ),
+      ],
+    );
+  }
 
   InputDecoration _inputDecoration(String labelText,String hintText){
     return InputDecoration(

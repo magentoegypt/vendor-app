@@ -49,6 +49,8 @@ class Customer {
   String? street;
   String? city;
   String? region;
+  /// Set when the state was picked from the country's list.
+  int? region_id;
   String? company;
   String? telephone;
   String? postcode;
@@ -126,7 +128,10 @@ class Customer {
     return data;
   }
 
-  Map<String, dynamic> toUpfateProfileJson() {
+  /// [withTelephone] is false when the number is unchanged: sending the
+  /// seller's own number ran the server's "Mobile number already exists."
+  /// check against the seller, and no profile change could be saved.
+  Map<String, dynamic> toUpfateProfileJson({bool withTelephone = true}) {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     var fullname = firstname?.split(' ');
     data['id'] = this.id;
@@ -137,7 +142,8 @@ class Customer {
     data['country_id'] = this.country_id;
     _putAddress(data);
     data['region'] = this.region;
-    data['telephone'] = this.telephone;
+    if (this.region_id != null) data['region_id'] = this.region_id;
+    if (withTelephone) data['telephone'] = this.telephone;
     if((fullname?.length ?? 0) > 0){
       data['firstname'] = fullname?[0];
     }else{
