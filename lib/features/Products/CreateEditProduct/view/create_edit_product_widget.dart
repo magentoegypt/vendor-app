@@ -20,6 +20,7 @@ import '../../../../core/config/tools.dart';
 import '../../../../core/helper/api_url_helpers.dart';
 import '../../../../core/helper/loading_screen.dart';
 import '../../../../core/helper/shared_preferences_helpers.dart';
+import '../../../../core/utils/category_selection.dart';
 import '../../../../core/utils/json_parser.dart';
 import '../../../../core/utils/numeric_input_formatter.dart';
 import '../../../../core/utils/product_url_key.dart';
@@ -60,8 +61,10 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
   ProductAttributeModel quantityAttributeModel = ProductAttributeModel();
   ProductAttributeModel galleryproductAttributeModel = ProductAttributeModel();
   // "approval" is the admin's decision: the web vendor panel does not offer
-  // it, and new products are queued as Pending New without it.
-  List<String> skipAttributeName = ["approval","credit_type","credit_value_fixed","credit_value_dropdown",
+  // it, and new products are queued as Pending New without it. "VENDORID"
+  // (labelled VENDOR-ID) is a store attribute naming a vendor: a seller must
+  // not see or change who a product belongs to.
+  List<String> skipAttributeName = ["approval","VENDORID","credit_type","credit_value_fixed","credit_value_dropdown",
     "credit_value_custom","credit_price","credit_rate","links_exist","quantity_and_stock_status","select_from_product_id",
     "links_title","samples_title","links_purchased_separately","image_label","shipment_type","page_layout",
     "special_price","gift_message_available","extragallery_glr_type","mgs_template","mgs_image_dimention",
@@ -769,16 +772,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                     children: 'children_data'
                                 ),
                                 onChecked: (List<Map<String, dynamic>> checkedList) {
-                                  setState(() {
-                                    if(checkedList.isNotEmpty){
-                                      var id = checkedList.first['id'];
-                                      if(category_ids.contains(id)){
-                                        category_ids.remove(id.toString());
-                                      }else{
-                                        category_ids.add(id.toString());
-                                      }
-                                    }
-                                  });
+                                  setState(() => applyCategoryChecks(category_ids, checkedList));
                                 },
                               ),
                             ),
@@ -826,7 +820,9 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                               final Map<String, dynamic> extension_attributes = new Map<String, dynamic>();
                               List<Map<String, dynamic>> media_gallery_entries = [];
 
-                              product['type_id'] = "simple";
+                              // An edit keeps the product's own type (virtual,
+                              // downloadable...); the form creates simple products.
+                              product['type_id'] = productItem?.typeId ?? "simple";
                               product['attributeSetId'] = attributeSetId;
                               for (int index = 0; index < list.length; index++) {
                                 if(skipAttributeName.contains(list[index].attributeCode) ||
