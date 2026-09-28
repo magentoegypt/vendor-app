@@ -57,6 +57,10 @@ class  DasboardApiService {
       );
     } on SocketException {
       throw HttpException(StringValues.no_internet);
+    } on HttpException {
+      // The server's own message, e.g. the 403 for a pending or disabled
+      // seller account: show it, not a generic network error.
+      rethrow;
     } catch (exception) {
       //await Sentry.captureException(exception, stackTrace: stackTrace);
       throw HttpException('Error Communicating with Server');
@@ -98,6 +102,10 @@ class  DasboardApiService {
       );
     } on SocketException {
       throw HttpException(StringValues.no_internet);
+    } on HttpException {
+      // The server's own message, e.g. the 403 for a pending or disabled
+      // seller account: show it, not a generic network error.
+      rethrow;
     } catch (exception) {
       //await Sentry.captureException(exception, stackTrace: stackTrace);
       throw HttpException('Error Communicating with Server');
