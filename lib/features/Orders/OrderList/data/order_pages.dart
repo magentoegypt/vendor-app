@@ -6,6 +6,9 @@ import 'orderListModel.dart';
 /// A page that is short, or adds nothing new, is the last one. Orders already
 /// shown are skipped, so a server that ignores the page number cannot fill
 /// the list with repeats or keep it loading forever.
+///
+/// total_count is not used: /V1/vendors/order reports the page's own count
+/// there (20 for a seller with 90 orders), which stopped the list at 20.
 ({List<OrderModel> orders, bool hasMore}) addOrderPage(
   List<OrderModel> shown,
   OrderListModel page, {
@@ -23,7 +26,6 @@ import 'orderListModel.dart';
     added = fresh.length;
     orders = [...shown, ...fresh];
   }
-  final total = page.totalCount;
-  final hasMore = items.length == pageSize && added > 0 && (total == null || orders.length < total);
+  final hasMore = items.length == pageSize && added > 0;
   return (orders: orders, hasMore: hasMore);
 }

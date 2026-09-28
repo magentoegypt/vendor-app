@@ -24,13 +24,26 @@ void main() {
       expect(page.hasMore, isTrue);
     });
 
-    test('older pages are added until the total is reached', () {
-      var shown = orders(1, 80);
-      final last = addOrderPage(shown,
-          OrderListModel(items: orders(81, 10), totalCount: 90),
+    test('older pages are added until a short page', () {
+      final full = addOrderPage(orders(1, 20),
+          OrderListModel(items: orders(21, 20), totalCount: 20),
+          pageNumber: 2, pageSize: 20);
+      expect(full.orders.length, 40);
+      expect(full.hasMore, isTrue);
+
+      final last = addOrderPage(orders(1, 80),
+          OrderListModel(items: orders(81, 10), totalCount: 10),
           pageNumber: 5, pageSize: 20);
       expect(last.orders.length, 90);
       expect(last.hasMore, isFalse);
+    });
+
+    test("a total_count that only counts the page does not stop the list", () {
+      // What /V1/vendors/order sends for a seller with 90 orders.
+      final first = addOrderPage(const [],
+          OrderListModel(items: orders(1, 20), totalCount: 20),
+          pageNumber: 1, pageSize: 20);
+      expect(first.hasMore, isTrue);
     });
 
     test('a server that ignores the page number cannot loop or repeat', () {
