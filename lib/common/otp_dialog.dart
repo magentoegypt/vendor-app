@@ -21,6 +21,10 @@ class OtpDialog  {
       context: context,
       builder: (BuildContext context) {
         String otp = '';
+        // Six boxes at the default 40 dp need 240 dp, but on a 360 dp phone
+        // the dialog leaves 232 dp (a 40 dp inset and 24 dp of padding on each
+        // side), which overflowed by 8 px: size them to the space there is.
+        final boxWidth = ((MediaQuery.sizeOf(context).width - 128) / 6 - 2).clamp(24.0, 40.0);
 
         return AlertDialog(
           title: Text(AppLocalizations.of(context)!.phoneNumberVerification),
@@ -70,6 +74,7 @@ class OtpDialog  {
                     pinTheme: PinTheme(
                       shape: PinCodeFieldShape.underline,
                       borderWidth: 2,
+                      fieldWidth: boxWidth,
                       activeFillColor: Theme.of(context).colorScheme.background,
                       disabledColor: Theme.of(context).disabledColor,
                     ),
@@ -101,7 +106,9 @@ class OtpDialog  {
                   textAlign: TextAlign.center,
                   text: TextSpan(
                       text: AppLocalizations.of(context)!.didntReceiveCode,
-                      style: const TextStyle(fontSize: 15),
+                      // RichText does not take the theme's text colour: without
+                      // one this line was drawn white on the white dialog.
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 15),
                       children: [
                         TextSpan(
                             text: AppLocalizations.of(context)!.resend,
@@ -116,33 +123,32 @@ class OtpDialog  {
               )
             ],
           ),
+          // The dialog's own actions bar stacks the buttons when they do not
+          // fit side by side (a longer Arabic label, a larger system font)
+          // instead of overflowing like a Row.
+          actionsAlignment: MainAxisAlignment.spaceBetween,
           actions: [
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () {
-                    OtpDialog.isDialogOpen = false;
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(AppLocalizations.of(context)!.cancel),
-                ),
-                Spacer(),
-                ElevatedButton(
-                  onPressed: () {
-                    // Handle OTP submission
-                    if (pinCodeController.text.trim().length == 6) {
-                      OtpDialog.isDialogOpen = false;
-                      Navigator.of(context).pop();
-                      loginSms(pinCodeController.text, "verify");
-                    }else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(AppLocalizations.of(context)!.validOTP)),
-                      );
-                    }
-                  },
-                  child: Text(AppLocalizations.of(context)!.verifySMSCode),
-                ),
-              ],
+            TextButton(
+              onPressed: () {
+                OtpDialog.isDialogOpen = false;
+                Navigator.of(context).pop();
+              },
+              child: Text(AppLocalizations.of(context)!.cancel),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Handle OTP submission
+                if (pinCodeController.text.trim().length == 6) {
+                  OtpDialog.isDialogOpen = false;
+                  Navigator.of(context).pop();
+                  loginSms(pinCodeController.text, "verify");
+                }else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(AppLocalizations.of(context)!.validOTP)),
+                  );
+                }
+              },
+              child: Text(AppLocalizations.of(context)!.verifySMSCode),
             ),
           ],
         );
