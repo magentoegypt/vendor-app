@@ -90,7 +90,9 @@ class Tools {
   }
 
   static void showSnackBar(ScaffoldMessengerState? state, message) {
-    if (state != null) {
+    // An error without text (an expired session, which the login screen
+    // explains) shows nothing rather than an empty bar.
+    if (state != null && '$message'.trim().isNotEmpty) {
       state.showSnackBar(SnackBar(content: Text(message)));
     }
   }

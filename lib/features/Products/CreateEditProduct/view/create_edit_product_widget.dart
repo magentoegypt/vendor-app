@@ -540,7 +540,8 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                       }
                     });
                   }
-                  if (state is ProductsError) {
+                  // No text means the session expired: the login screen says so.
+                  if (state is ProductsError && state.errorMessage.isNotEmpty) {
                     if (state.errorMessage.contains('SKU') && list.any((a) => a.attributeCode == 'sku')) {
                       // e.g. 'The SKU "1223" is already used by another product.'
                       _showFieldError('sku', state.errorMessage);

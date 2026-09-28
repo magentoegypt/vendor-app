@@ -66,7 +66,7 @@ dynamic apiResponseHelper({
         await prefs.removeSingleKey(key: userPrefKey);
         await prefs.setIntData(key: initScreenPrefKey, id: 0);
         onSessionExpired?.call();
-        throw UnauthorizedException(response.statusCode);
+        throw SessionExpiredException();
       }
     default:
       throw HttpException(magentoErrorMessage(response.body));

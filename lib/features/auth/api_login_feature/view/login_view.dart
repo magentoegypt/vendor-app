@@ -53,7 +53,9 @@ class _SignInViewState extends State<SignInView> {
     if (widget.sessionExpired) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          Tools.showSnackBar(ScaffoldMessenger.of(context), AppLocalizations.of(context)!.sessionExpiredMessage);
+          // Messages queued by the screens just closed would show first.
+          final messenger = ScaffoldMessenger.of(context)..clearSnackBars();
+          Tools.showSnackBar(messenger, AppLocalizations.of(context)!.sessionExpiredMessage);
         }
       });
     }

@@ -23,8 +23,12 @@ class BadRequestException extends AppException {
   BadRequestException([dynamic message]) : super(message, 'Invalid Request: ');
 }
 
-class UnauthorizedException extends AppException {
-  UnauthorizedException([dynamic message]) : super(message, 'Unauthorised: ');
+/// Thrown when the server rejects the stored token (401), after the session
+/// is cleared and the login screen has opened with "Your session has
+/// expired". Its text is empty so the screens whose calls failed add nothing:
+/// they used to show "Unauthorised: 401", once per failed call.
+class SessionExpiredException extends AppException {
+  SessionExpiredException() : super('', '');
 }
 
 class InvalidInputException extends AppException {
