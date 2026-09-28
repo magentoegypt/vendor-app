@@ -416,6 +416,16 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                   }
                   if (state is ProductsAttributeLoaded) {
                     setState(() {
+                      // Switching the attribute set reloads the fields: keep what
+                      // the vendor typed where the new set has the same field (it
+                      // was wiped), and drop the error of a field that is gone.
+                      final typed = {
+                        for (final attribute in list)
+                          if ((attribute.value?.toString() ?? '').isNotEmpty)
+                            attribute.attributeCode: attribute.value,
+                      };
+                      _errorCode = null;
+                      _errorText = null;
                       list.clear();
                       state.productAttributeModel.forEach((object){
                          if(!skipAttributeName.contains(object.attributeCode)){
@@ -480,6 +490,12 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                         list.insert(0, quantityAttributeModel);
                       }
                       setData();
+                      for (final attribute in list) {
+                        if ((attribute.value?.toString() ?? '').isEmpty && typed.containsKey(attribute.attributeCode)) {
+                          attribute.value = typed[attribute.attributeCode];
+                        }
+                      }
+                      _syncControllers();
                     });
                   }else if (state is ProductsAttributeSetLoaded) {
                     setState(() {
