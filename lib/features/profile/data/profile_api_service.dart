@@ -7,22 +7,20 @@ import '../../../../core/config/logger.dart';
 import '../../../../core/helper/api_response_helper.dart';
 import '../../../../core/helper/api_url_helpers.dart';
 import '../../../../core/values/string_values.dart';
-import '../../../core/config/pref_keys.dart';
-import '../../../core/helper/shared_preferences_helpers.dart';
 import '../../auth/api_login_feature/data/login_api_service.dart';
 import '../../auth/register_feature/data/CountryListModel.dart';
 import '../../auth/register_feature/data/SignUpModel.dart';
+import 'package:multi_vendor/core/helper/session_token.dart';
 
 class ProfileApiService {
   final http.Client _httpClient;
-  final SharedPreferencesHelpers _sharedPrefKeys = SharedPreferencesHelpers();
   ProfileApiService({http.Client? httpClient})
       : _httpClient = httpClient ?? http.Client();
 
   Future<UserModel> postUserProfileData({
     required Map<String, dynamic> requestValueMap,
   }) async {
-    final token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey) ?? "";
+    final token = await SessionToken.current() ?? "";
     final responseBody = await _putData(
       requestValueMap: requestValueMap,
       token: token,
@@ -135,7 +133,7 @@ class ProfileApiService {
   /// get Data Functions
   Future<dynamic> _deleteVendorData() async {
     try {
-      final token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey) ?? "";
+      final token = await SessionToken.current() ?? "";
       final response = await _httpClient.delete(
         Uri.parse(vendorDeleteDataApi),
         headers: <String, String>{

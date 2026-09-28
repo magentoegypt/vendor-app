@@ -1,4 +1,5 @@
 const String authTokenPrefKey = 'authToken';
+const String authTokenIssuedAtPrefKey = 'authTokenIssuedAt';
 const String userEmailPrefKey = 'userEmail';
 const String userIDPrefKey = 'userID';
 const String userPrefKey = 'user';

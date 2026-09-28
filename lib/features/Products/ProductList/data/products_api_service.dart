@@ -3,18 +3,16 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../../../../core/config/app_exceptions.dart';
 import '../../../../core/config/logger.dart';
-import '../../../../core/config/pref_keys.dart';
 import '../../../../core/helper/api_response_helper.dart';
 import '../../../../core/helper/api_url_helpers.dart';
-import '../../../../core/helper/shared_preferences_helpers.dart';
 import '../../../../core/values/string_values.dart';
 import 'productListModel.dart';
+import 'package:multi_vendor/core/helper/session_token.dart';
 
 
 
 class ProductsApiService {
   final http.Client _httpClient;
-  final SharedPreferencesHelpers _sharedPrefKeys = SharedPreferencesHelpers();
 
   ProductsApiService({http.Client? httpClient})
       : _httpClient = httpClient ?? http.Client();
@@ -41,7 +39,7 @@ class ProductsApiService {
   /// get Data Functions
   Future<dynamic> _getProductsData(String query) async {
     try {
-      var token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey);
+      var token = await SessionToken.current();
       final response = await _httpClient.get(
         Uri.parse(vendorsProductsListApi+query),
         headers: <String, String>{

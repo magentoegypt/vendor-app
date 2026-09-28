@@ -6,19 +6,17 @@ import 'package:multi_vendor/features/Products/CreateEditProduct/data/StockItemQ
 import 'package:multi_vendor/features/Products/ProductList/data/productListModel.dart';
 import '../../../../core/config/app_exceptions.dart';
 import '../../../../core/config/logger.dart';
-import '../../../../core/config/pref_keys.dart';
 import '../../../../core/helper/api_response_helper.dart';
 import '../../../../core/helper/api_url_helpers.dart';
-import '../../../../core/helper/shared_preferences_helpers.dart';
 import '../../../../core/values/string_values.dart';
 import 'ProductAttributeModel.dart';
 import 'ProductAttributeSetList.dart';
+import 'package:multi_vendor/core/helper/session_token.dart';
 
 
 
 class CreateEditProductApiService {
   final http.Client _httpClient;
-  final SharedPreferencesHelpers _sharedPrefKeys = SharedPreferencesHelpers();
 
   CreateEditProductApiService({http.Client? httpClient})
       : _httpClient = httpClient ?? http.Client();
@@ -49,7 +47,7 @@ class CreateEditProductApiService {
   /// get Data Functions
   Future<dynamic> _getProductsAttributeData(String query) async {
     try {
-      var token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey);
+      var token = await SessionToken.current();
       final response = await _httpClient.get(
         Uri.parse(vendorsProductAttributeApi+query),
         headers: <String, String>{
@@ -103,7 +101,7 @@ class CreateEditProductApiService {
   /// get Data Functions
   Future<dynamic> _getProductsAttributeSetListData(String query) async {
     try {
-      var token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey);
+      var token = await SessionToken.current();
       final response = await _httpClient.get(
         Uri.parse(vendorsProductAttributeSetListApi+query),
         headers: <String, String>{
@@ -158,7 +156,7 @@ class CreateEditProductApiService {
     required bool isUpdate,
   }) async {
     try {
-      var token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey);
+      var token = await SessionToken.current();
       http.Response response;
       if(isUpdate){
         response = await _httpClient.put(
@@ -222,7 +220,7 @@ class CreateEditProductApiService {
   /// get Data Functions
   Future<dynamic> _getSingleProduct(String productSku) async {
     try {
-      var token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey);
+      var token = await SessionToken.current();
       final response = await _httpClient.get(
         Uri.parse(vendorsSingleProductsApi+productSku.replaceAll(" ","%20")),
         headers: <String, String>{
@@ -251,7 +249,7 @@ class CreateEditProductApiService {
 
   Future<dynamic> _getSingleProductQuantity(String productSku) async {
     try {
-      var token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey);
+      var token = await SessionToken.current();
       final response = await _httpClient.get(
         Uri.parse(vendorsSingleProductQuantityApi+productSku.replaceAll(" ","%20")),
         headers: <String, String>{
@@ -300,7 +298,7 @@ class CreateEditProductApiService {
 
   Future<dynamic> _getProductCategories() async {
     try {
-      var token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey);
+      var token = await SessionToken.current();
       final response = await _httpClient.get(
         Uri.parse(vendorsProductCategoriesApi),
         headers: <String, String>{
@@ -349,7 +347,7 @@ class CreateEditProductApiService {
   Future<dynamic> _deleteProductMedia(String sku,MediaGalleryEntries mediaGalleryEntry) async {
     try {
 
-      var token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey);
+      var token = await SessionToken.current();
       print(mediaGalleryEntry.toJson());
       if ((mediaGalleryEntry.types?.length ?? 0)>0){
         mediaGalleryEntry.types = [];

@@ -2,19 +2,17 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../../../features/home/data/UserModel.dart';
-import '../../../core/config/pref_keys.dart';
-import '../../../core/helper/shared_preferences_helpers.dart';
 import '../../../features/home/data/DashboarModel.dart';
 import '../../../core/config/app_exceptions.dart';
 import '../../../core/config/logger.dart';
 import '../../../core/helper/api_response_helper.dart';
 import '../../../core/helper/api_url_helpers.dart';
 import '../../../core/values/string_values.dart';
+import 'package:multi_vendor/core/helper/session_token.dart';
 
 
 class  DasboardApiService {
   final http.Client _httpClient;
-  final SharedPreferencesHelpers _sharedPrefKeys = SharedPreferencesHelpers();
    DasboardApiService({http.Client? httpClient})
       : _httpClient = httpClient ?? http.Client();
 
@@ -40,7 +38,7 @@ class  DasboardApiService {
   /// get Data Functions
   Future<dynamic> _getDashboardData() async {
     try {
-      var token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey);
+      var token = await SessionToken.current();
       final response = await _httpClient.get(
         Uri.parse(dashboardApi),
         headers: <String, String>{
@@ -85,7 +83,7 @@ class  DasboardApiService {
   /// get Data Functions
   Future<dynamic> _getUserData() async {
     try {
-      var token = await _sharedPrefKeys.getStringData(key: authTokenPrefKey);
+      var token = await SessionToken.current();
       final response = await _httpClient.get(
         Uri.parse(vendorDetailsApi),
         headers: <String, String>{

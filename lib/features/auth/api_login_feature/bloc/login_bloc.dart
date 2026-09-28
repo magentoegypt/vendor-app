@@ -10,6 +10,7 @@ import '../../../../core/helper/shared_preferences_helpers.dart';
 import '../../../home/data/UserModel.dart';
 import '../../forgot_password_feature/data/MobileOTPModel.dart';
 import '../data/login_repository.dart';
+import 'package:multi_vendor/core/helper/session_token.dart';
 part 'login_event.dart';
 part 'login_state.dart';
 
@@ -80,7 +81,8 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
   /// Awaited so the dashboard never reads the token before it is stored.
   Future<void> _saveSession(String userToken, UserModel vendor) async {
-    await _sharedPrefKeys.setStringData(key: authTokenPrefKey, text: userToken);
+    // With the time it was issued, so it is renewed before its hour is up.
+    await SessionToken.save(userToken);
     await _sharedPrefKeys.setStringData(
         key: userPrefKey, text: jsonEncode(vendor.toJson()));
     await _sharedPrefKeys.setIntData(key: initScreenPrefKey, id: 1);

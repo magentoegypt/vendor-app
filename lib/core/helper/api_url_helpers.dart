@@ -7,6 +7,7 @@ import '../config/app_constants.dart';
  String userLoginApi = '$apiBaseUrl/rest/$selectedLanguage/V1/integration/customer/token';
  String userRegisterApi = '$apiBaseUrl/rest/$selectedLanguage/V1/vendors/register';
  String vendorDetailsApi = '$apiBaseUrl/rest/$selectedLanguage/V1/vendors/me';
+const String vendorTokenRefreshApi = '$apiBaseUrl/rest/V1/vendors/me/token/refresh';
  // Seller-only endpoints: PUT updates and DELETE removes the signed-in vendor.
  String vendorUpdateDataApi = '$apiBaseUrl/rest/$selectedLanguage/V1/vendors/me';
 String vendorDeleteDataApi = '$apiBaseUrl/rest/$selectedLanguage/V1/vendors/me';
