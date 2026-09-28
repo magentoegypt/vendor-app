@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -6,6 +7,10 @@ import 'package:multi_vendor/core/config/app_exceptions.dart';
 import 'package:multi_vendor/core/config/pref_keys.dart';
 import 'package:multi_vendor/core/config/tools.dart';
 import 'package:multi_vendor/core/helper/api_response_helper.dart';
+import 'package:multi_vendor/features/auth/api_login_feature/bloc/login_bloc.dart';
+import 'package:multi_vendor/features/auth/api_login_feature/data/login_repository.dart';
+import 'package:multi_vendor/features/auth/api_login_feature/view/login_view.dart';
+import 'package:multi_vendor/l10n/app_localizations.dart';
 import 'package:multi_vendor/features/Orders/OrderList/bloc/orders_bloc.dart';
 import 'package:multi_vendor/features/Orders/OrderList/bloc/orders_event.dart';
 import 'package:multi_vendor/features/Orders/OrderList/bloc/orders_state.dart';
@@ -81,6 +86,38 @@ void main() {
               (e) => '$e', 'text', 'The account sign-in was incorrect.')));
       expect(loginOpened, 0);
     });
+  });
+
+  testWidgets('the login screen says the session expired, and nothing else',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final navigator = GlobalKey<NavigatorState>();
+    await tester.pumpWidget(BlocProvider<LoginBloc>(
+      create: (_) => LoginBloc(repository: LoginRepository()),
+      child: MaterialApp(
+        navigatorKey: navigator,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: const Scaffold(),
+      ),
+    ));
+    // What a screen whose call failed used to queue before login opened.
+    Tools.showSnackBar(
+        tester.state<ScaffoldMessengerState>(find.byType(ScaffoldMessenger)),
+        'Unauthorised: 401');
+    await tester.pump();
+
+    navigator.currentState!.pushAndRemoveUntil(
+        MaterialPageRoute(
+            builder: (_) => const SignInView(sessionExpired: true)),
+        (route) => false);
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 200));
+    }
+
+    expect(find.text('Your session has expired. Please log in again.'),
+        findsOneWidget);
+    expect(find.text('Unauthorised: 401'), findsNothing);
   });
 
   testWidgets('an error without text shows no empty bar', (tester) async {
