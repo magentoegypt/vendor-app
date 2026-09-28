@@ -15,9 +15,8 @@ class StoreCurrency {
   StoreCurrency._();
 
   /// Uses what was saved last time straight away, then asks the store
-  /// (anonymous /V1/directory/currency, in the app language so the symbol is
-  /// too). [onChanged] runs whenever what is in use changes, so screens can
-  /// redraw.
+  /// (anonymous /V1/directory/currency). [onChanged] runs whenever the
+  /// currency in use changes, so screens can redraw.
   static Future<void> load(
       {http.Client? client, void Function()? onChanged}) async {
     final prefs = SharedPreferencesHelpers();
@@ -25,8 +24,6 @@ class StoreCurrency {
       final saved = await prefs.getStringData(key: storeCurrencyPrefKey);
       if ((saved ?? '').isNotEmpty) {
         Money.storeCurrency = saved;
-        Money.storeCurrencySymbol =
-            await prefs.getStringData(key: storeCurrencySymbolPrefKey);
         onChanged?.call();
       }
     }
@@ -39,18 +36,9 @@ class StoreCurrency {
       final code = (body['default_display_currency_code'] ??
               body['base_currency_code'])
           ?.toString();
-      final symbol = (body['default_display_currency_symbol'] ??
-              body['base_currency_symbol'])
-          ?.toString();
-      if (code == null || code.isEmpty) return;
-      if (code == Money.storeCurrency && symbol == Money.storeCurrencySymbol) {
-        return;
-      }
+      if (code == null || code.isEmpty || code == Money.storeCurrency) return;
       Money.storeCurrency = code;
-      Money.storeCurrencySymbol = symbol;
       await prefs.setStringData(key: storeCurrencyPrefKey, text: code);
-      await prefs.setStringData(
-          key: storeCurrencySymbolPrefKey, text: symbol ?? '');
       onChanged?.call();
     } catch (_) {
       // Offline or unexpected reply: keep what was saved.

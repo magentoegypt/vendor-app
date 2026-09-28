@@ -255,7 +255,7 @@ class Tools {
   /// [number] with its currency: [currency] when the data carries one (an
   /// order's currency code), otherwise the store's (AED on Hub Market).
   static String getCurrencyCode(dynamic number, {String? currency}){
-    return Money.format(number, currency: currency, language: selectedLanguage);
+    return Money.format(number, currency: currency);
   }
 
   /// Money for display with two decimals: 149.95, 100.00.

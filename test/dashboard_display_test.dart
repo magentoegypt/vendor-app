@@ -6,28 +6,21 @@ import 'package:multi_vendor/features/home/view/sale_stats_chart.dart';
 
 void main() {
   setUp(() {
-    // What /rest/ar/V1/directory/currency returns on Hub Market.
+    // What /V1/directory/currency returns on Hub Market.
     Money.storeCurrency = 'AED';
-    Money.storeCurrencySymbol = 'د.إ.‏';
   });
   tearDown(() {
     Money.storeCurrency = null;
-    Money.storeCurrencySymbol = null;
   });
 
   group('Currency (14zb93nv1jw item 7, 14zb93nv1kq item 4)', () {
     test('an order shows in its own currency, not a hard-coded EGP', () {
       expect(Money.format(550, currency: 'AED'), 'AED 550.00');
-      expect(Money.format(550, currency: 'AED', language: 'ar'), '550.00 د.إ.‏');
+      expect(Money.format(1430, currency: 'EGP'), 'EGP 1,430.00');
     });
 
-    test('product prices use the store currency and its own symbol', () {
+    test('product prices use the store currency', () {
       expect(Money.format(963653), 'AED 963,653.00');
-      expect(Money.format(963653, language: 'ar'), '963,653.00 د.إ.‏');
-    });
-
-    test('no symbol is invented: another currency shows its code', () {
-      expect(Money.format(1430, currency: 'EGP', language: 'ar'), '1,430.00 EGP');
     });
 
     test('before the store currency is known, amounts show no currency', () {
@@ -35,13 +28,13 @@ void main() {
       expect(Money.format(963653), '963,653.00');
     });
 
-    test('Tools.getCurrencyCode follows the app language', () {
+    test('Arabic shows the code as well, like the dashboard cards', () {
       final previous = selectedLanguage;
+      addTearDown(() => selectedLanguage = previous);
       selectedLanguage = 'en';
       expect(Tools.getCurrencyCode(26000, currency: 'AED'), 'AED 26,000.00');
       selectedLanguage = 'ar';
-      expect(Tools.getCurrencyCode(26000, currency: 'AED'), '26,000.00 د.إ.‏');
-      selectedLanguage = previous;
+      expect(Tools.getCurrencyCode(26000, currency: 'AED'), 'AED 26,000.00');
     });
   });
 
