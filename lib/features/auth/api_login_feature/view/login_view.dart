@@ -66,25 +66,6 @@ class _SignInViewState extends State<SignInView> {
       dialCode: "+20",
       name: "Egypt",
     );
-   // setDummyValues();
-  }
-
-  void setDummyValues() {
-    setState(() {
-      // _emailController.text = 'walmart@magento2.com';
-      // _passwordController.text = 'walmart23&';
-      // _emailController.text = "test2@mailinator.com";
-      // _passwordController.text = 'P@ssw0rd99999';
-      // _emailController.text = "amira@magentoegypt.com";
-      // _passwordController.text = 'amira@123';
-      //magentotester2@gmail.com
-      // tester2@123
-      //amira@magentoegypt.com
-      //amira@123
-     _emailController.text = "malk09060@gmail.com";
-     _passwordController.text = 'malk09060@123';
-
-    });
   }
 
   @override
