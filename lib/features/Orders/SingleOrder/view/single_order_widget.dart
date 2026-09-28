@@ -305,17 +305,15 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            flex: 2,
             child: Text(
               label,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
-          Spacer(),
-          Expanded(
-            flex: 1,
-            child: Text(value),
-          ),
+          const SizedBox(width: 12),
+          // The amount keeps its full width: in a quarter of the row,
+          // "AED 963,653.00" broke after "AED".
+          Text(value, maxLines: 1),
         ],
       ),
     );
