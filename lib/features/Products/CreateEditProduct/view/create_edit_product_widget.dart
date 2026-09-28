@@ -202,22 +202,19 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
     }
   }
 
-  // The approval attribute's options (the field itself is hidden), to tell
-  // whether the product being edited is live on the store.
-  List<Options>? _approvalOptions;
+  // Vnecoms approval values as the attribute set lists them: 0 Not Submited,
+  // 1 Pending New, 2 Approved, 3 Unapproved, 4 Pending Update. Compared by
+  // value, since the labels can come back translated in Arabic.
+  static const _approved = '2';
   bool _wasLive = false;
 
-  /// Whether the product is live: its approval option reads "Approved".
-  /// Saving an edit to a live product sends it to the admin as Pending Update,
-  /// and the store hides it until the edit is approved.
+  /// Whether the product is live (Approved). Saving an edit to a live product
+  /// sends it to the admin as Pending Update, and the store hides it until
+  /// the edit is approved.
   bool _isLive() {
-    String? value;
     for (final attribute in productItem?.customAttributes ?? <CustomAttributes>[]) {
-      if (attribute.attributeCode == 'approval') value = attribute.value?.toString();
-    }
-    for (final option in _approvalOptions ?? <Options>[]) {
-      if (value != null && option.value == value) {
-        return option.label?.trim().toLowerCase() == 'approved';
+      if (attribute.attributeCode == 'approval') {
+        return attribute.value?.toString() == _approved;
       }
     }
     return false;
@@ -423,9 +420,6 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                       state.productAttributeModel.forEach((object){
                          if(!skipAttributeName.contains(object.attributeCode)){
                            list.add(object);
-                         }
-                         if(object.attributeCode == 'approval'){
-                           _approvalOptions = object.options;
                          }
                       });
                      // list = state.productAttributeModel;
