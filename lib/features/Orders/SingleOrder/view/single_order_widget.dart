@@ -98,7 +98,7 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                             children: [
                               _buildSectionHeader(AppLocalizations.of(context)!.orderAccountInformation),
                              // _buildRow('Order #', '000000017 (The order confirmation email is not sent)'),
-                              _buildRow(AppLocalizations.of(context)!.orderNo, orderModel?.incrementId ?? ''),
+                              _buildRow(AppLocalizations.of(context)!.orderNo, orderModel?.incrementId ?? '', singleLine: true),
                               _buildRow(AppLocalizations.of(context)!.orderDate, orderDate == null ? '' : DateFormat('d MMM yyyy, hh:mm:ss a').format(orderDate!.toLocal())),
                               _buildRow(AppLocalizations.of(context)!.orderstatus, Tools.getOrderStatus(context,orderModel?.status ?? "")),
                               // _buildRow('Purchased From', 'Main Website Store - Arabic'),
@@ -283,7 +283,9 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
     ],);
   }
 
-  Widget _buildRow(String label, String value) {
+  /// [singleLine] keeps a value such as the order number on one line, shrunk
+  /// to fit, instead of wrapping.
+  Widget _buildRow(String label, String value, {bool singleLine = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
@@ -299,7 +301,13 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
           SizedBox(width: 5,),
           Expanded(
             flex: 3,
-            child: Text(value),
+            child: singleLine
+                ? FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
+                    child: Text(value, maxLines: 1),
+                  )
+                : Text(value),
           ),
         ],
       ),

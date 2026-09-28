@@ -42,13 +42,20 @@ class OrderItem extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      // The order number the vendor, customer and web panel
-                      // use (3000000044), not the internal id (137).
-                      '#${order.incrementId ?? order.orderId}',
-                      style: Theme.of(context).textTheme.bodyLarge!.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                    // One line, shrunk to fit its third of the row: the
+                    // 10-digit number broke as "#30000001" / "48".
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Text(
+                        // The order number the vendor, customer and web panel
+                        // use (3000000044), not the internal id (137).
+                        '#${order.incrementId ?? order.orderId}',
+                        maxLines: 1,
+                        style: Theme.of(context).textTheme.bodyLarge!.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
                     ),
                     const SizedBox(
                       height: 3,

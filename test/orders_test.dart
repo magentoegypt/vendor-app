@@ -105,4 +105,33 @@ void main() {
     expect(find.text('#3000000044'), findsOneWidget);
     expect(find.text('#137'), findsNothing);
   });
+
+  testWidgets('the order number stays on one line in a narrow row',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: Scaffold(
+        body: Center(
+          // A row as narrow as on the phone, where it broke as
+          // "#30000001" / "48".
+          child: SizedBox(
+            width: 280,
+            child: OrderItem(
+              order: OrderModel(
+                  entityId: 5,
+                  incrementId: '3000000148',
+                  status: 'pending',
+                  createdAt: '2026-09-27 10:00:00',
+                  grandTotal: 963653),
+            ),
+          ),
+        ),
+      ),
+    ));
+
+    final number = tester.renderObject<RenderBox>(find.text('#3000000148'));
+    // One line of 16 px text is about 22 px tall; two lines would be twice that.
+    expect(number.size.height, lessThan(30));
+  });
 }
