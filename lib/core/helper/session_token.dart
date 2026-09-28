@@ -21,6 +21,7 @@ import 'shared_preferences_helpers.dart';
 class SessionToken {
   SessionToken._();
 
+  static const lifetime = Duration(minutes: 60);
   static const refreshAfter = Duration(minutes: 30);
 
   static Future<String?>? _refreshing;
@@ -34,18 +35,19 @@ class SessionToken {
         id: (now ?? DateTime.now()).millisecondsSinceEpoch);
   }
 
-  /// The token to send, refreshed first once it is [refreshAfter] old. A
-  /// session from before issue times were kept is refreshed on first use.
+  /// The token to send, refreshed first once it is [refreshAfter] old. Its
+  /// age comes from the JWT's own expiry, or else from when it was saved; a
+  /// token with neither is refreshed on first use.
   static Future<String?> current({http.Client? client, DateTime? now}) async {
     final prefs = SharedPreferencesHelpers();
     final token = await prefs.getStringData(key: authTokenPrefKey);
     if (token == null || token.isEmpty) return token;
-    final issuedAt = await prefs.getIntData(key: authTokenIssuedAtPrefKey);
-    if (issuedAt != null &&
-        (now ?? DateTime.now())
-                .difference(DateTime.fromMillisecondsSinceEpoch(issuedAt)) <
-            refreshAfter) {
-      return token;
+    final expiresAt = _expiry(token) ?? await _expiryFromSave(prefs);
+    if (expiresAt != null) {
+      final left = expiresAt.difference(now ?? DateTime.now());
+      // Past its hour a token can only be refused, so it is not sent to be
+      // refreshed: the request's own 401 sends the seller to log in.
+      if (left <= Duration.zero || left > lifetime - refreshAfter) return token;
     }
     // A block body: an arrow would hand back this same future, and
     // whenComplete would wait for itself.
@@ -77,7 +79,31 @@ class SessionToken {
     }
   }
 
-  /// The login endpoints' shape: a JSON string, or an object with "token".
+  /// When a seller token expires, from the "exp" claim of the JWT.
+  static DateTime? _expiry(String token) {
+    final parts = token.split('.');
+    if (parts.length != 3) return null;
+    try {
+      final payload = json.decode(
+          utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
+      final exp = payload is Map ? payload['exp'] : null;
+      return exp is num
+          ? DateTime.fromMillisecondsSinceEpoch((exp * 1000).round())
+          : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<DateTime?> _expiryFromSave(SharedPreferencesHelpers prefs) async {
+    final issuedAt = await prefs.getIntData(key: authTokenIssuedAtPrefKey);
+    return issuedAt == null
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(issuedAt).add(lifetime);
+  }
+
+  /// The refresh endpoint answers with a JSON string; an object with "token"
+  /// (the OTP login's shape) is read too.
   static String? _tokenIn(String body) {
     try {
       final decoded = json.decode(body);

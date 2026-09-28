@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -79,10 +81,54 @@ void main() {
           '{"message":"The consumer isn\'t authorized to access %resources."}', 401));
 
       final token = await SessionToken.current(
-          client: client, now: issued.add(const Duration(hours: 2)));
+          client: client, now: issued.add(const Duration(minutes: 45)));
 
       expect(token, 'old');
       expect(await stored(), 'old');
+    });
+
+    test('a token past its hour is not sent to refresh (it could only be refused)',
+        () async {
+      signedIn(at: issued);
+      var calls = 0;
+      final client = MockClient((_) async {
+        calls++;
+        return http.Response('"new"', 200);
+      });
+
+      final token = await SessionToken.current(
+          client: client, now: issued.add(const Duration(minutes: 61)));
+
+      expect(token, 'old');
+      expect(calls, 0);
+    });
+
+    test("the JWT's own expiry decides, even without a saved issue time",
+        () async {
+      String jwt(DateTime expires) {
+        String part(Object value) =>
+            base64Url.encode(utf8.encode(json.encode(value))).replaceAll('=', '');
+        return '${part({'alg': 'HS256'})}.'
+            '${part({'uid': 51, 'exp': expires.millisecondsSinceEpoch ~/ 1000})}.sig';
+      }
+      var calls = 0;
+      final client = MockClient((_) async {
+        calls++;
+        return http.Response('"new"', 200);
+      });
+      final now = issued.add(const Duration(minutes: 10));
+
+      signedIn(token: jwt(now.add(const Duration(minutes: 50))));
+      expect(await SessionToken.current(client: client, now: now), isNot('new'));
+      expect(calls, 0);
+
+      signedIn(token: jwt(now.add(const Duration(minutes: 20))));
+      expect(await SessionToken.current(client: client, now: now), 'new');
+      expect(calls, 1);
+
+      signedIn(token: jwt(now.subtract(const Duration(minutes: 1))));
+      expect(await SessionToken.current(client: client, now: now), isNot('new'));
+      expect(calls, 1);
     });
 
     test('a session from before issue times were kept is refreshed on first use',
