@@ -1123,7 +1123,7 @@
     "addressInformation":"معلومات العنوان",
     "paymentShippingMethod":"طريقة الدفع والشحن",
     "paymentInformation":"معلومات الدفع",
-    "orderwasplacedusingEGP":"تم تقديم الطلب باستخدام الجنيه المصري",
+    "orderPlacedInCurrency":"تم تقديم الطلب باستخدام {currency}.",
     "currencyEGP":"ج.م",
     "shippingHandlingInformation":"معلومات الشحن والمناولة",
     "itemsOrdered":"المنتجات المطلوبة",

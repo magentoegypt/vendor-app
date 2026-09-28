@@ -6,6 +6,7 @@ import 'package:multi_vendor/features/Orders/SingleOrder/bloc/single_order_event
 import '../../../../common/AppBars.dart';
 import '../../../../core/config/locator.dart';
 import '../../../../core/config/tools.dart';
+import '../../../../core/helper/country_names.dart';
 import '../../../../core/helper/loading_screen.dart';
 import '../../../../core/helper/shared_preferences_helpers.dart';
 import '../../SingleOrder/bloc/single_order_state.dart';
@@ -39,7 +40,9 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
   void initState() {
     super.initState();
     context.read<SingleOrderBloc>().add(PerformSingleOrder(orderId: widget.orderId));
-
+    CountryNames.load().then((_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -150,7 +153,8 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                                 children: [
                                   _buildSectionHeader(AppLocalizations.of(context)!.paymentShippingMethod),
                                   _buildRow(AppLocalizations.of(context)!.paymentInformation, _paymentInformation()),
-                                  _buildRow('', AppLocalizations.of(context)!.orderwasplacedusingEGP),
+                                  if ((orderModel?.orderCurrencyCode ?? '').isNotEmpty)
+                                    _buildRow('', AppLocalizations.of(context)!.orderPlacedInCurrency(orderModel!.orderCurrencyCode!)),
                                   _buildRow(AppLocalizations.of(context)!.shippingHandlingInformation, AppLocalizations.of(context)!.noShippinginformationavailable),
                                 ],
                               ),
@@ -188,7 +192,11 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                                 children: [
                                   _buildSectionHeader(AppLocalizations.of(context)!.orderTotal),
                                   _buildOrderTotalRow(AppLocalizations.of(context)!.subtotal, getStringWithCurrencyCode(orderModel?.baseSubtotal, base: true)),
+                                  if ((orderModel?.baseDiscountAmount ?? 0) != 0)
+                                    _buildOrderTotalRow(AppLocalizations.of(context)!.discount, getStringWithCurrencyCode(orderModel?.baseDiscountAmount, base: true)),
                                   _buildOrderTotalRow(AppLocalizations.of(context)!.shippingHandling, getStringWithCurrencyCode(orderModel?.baseShippingAmount, base: true)),
+                                  // Without it the totals did not add up: 500 + 0 shown as 550.
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.tax, getStringWithCurrencyCode(orderModel?.baseTaxAmount, base: true)),
                                   Container(
                                     margin: EdgeInsets.symmetric(vertical: 7.0),
                                     height: 1, // Set the height to 1 pixel
@@ -331,11 +339,13 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
           _buildRow(AppLocalizations.of(context)!.originalPrice, getStringWithCurrencyCode(item.originalPrice)),
           _buildRow(AppLocalizations.of(context)!.price, getStringWithCurrencyCode(item.price)),
           _buildRow(AppLocalizations.of(context)!.qty, Tools.formatQty(item.qtyOrdered ?? 0)),
-          _buildRow(AppLocalizations.of(context)!.subtotal, getStringWithCurrencyCode(item.rowTotalInclTax)),
+          // Subtotal is before tax and Row Total after it, as on the web
+          // panel; the two were swapped.
+          _buildRow(AppLocalizations.of(context)!.subtotal, getStringWithCurrencyCode(item.rowTotal)),
           _buildRow(AppLocalizations.of(context)!.taxAmount, getStringWithCurrencyCode(item.taxAmount)),
           _buildRow(AppLocalizations.of(context)!.taxPercent, '${Tools.formatQty(item.taxPercent ?? 0)}%'),
           _buildRow(AppLocalizations.of(context)!.discountAmount, getStringWithCurrencyCode(item.discountAmount)),
-          _buildRow(AppLocalizations.of(context)!.rowTotal, getStringWithCurrencyCode(item.rowTotal)),
+          _buildRow(AppLocalizations.of(context)!.rowTotal, getStringWithCurrencyCode(item.rowTotalWithTax)),
           Container(
             margin: EdgeInsets.symmetric(vertical: 7.0),
             height: 1, // Set the height to 1 pixel
@@ -359,8 +369,12 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
         SizedBox(height: 4),
         Text([billingAddress.firstname, billingAddress.lastname].whereType<String>().join(' ')),
         Text(billingAddress.street?.join(', ') ?? ''),
-        Text(billingAddress.postcode ?? ''),
-        Text(billingAddress.city ?? ''),
+        // Region and country were left out: an address the vendor could not
+        // ship to.
+        Text([billingAddress.city, billingAddress.region, billingAddress.postcode]
+            .whereType<String>().where((part) => part.trim().isNotEmpty).join(', ')),
+        if ((billingAddress.countryId ?? '').isNotEmpty)
+          Text(CountryNames.of(billingAddress.countryId) ?? billingAddress.countryId!),
         Text('T: ${billingAddress.telephone ?? ''}'),
         SizedBox(height: 8),
       ],

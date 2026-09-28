@@ -277,6 +277,7 @@ class BillingAddress {
   String? lastname;
   int? parentId;
   String? postcode;
+  String? region;
   List<String>? street;
   String? telephone;
 
@@ -292,6 +293,7 @@ class BillingAddress {
         this.lastname,
         this.parentId,
         this.postcode,
+        this.region,
         this.street,
         this.telephone});
 
@@ -307,6 +309,7 @@ class BillingAddress {
     lastname = JsonParser.toStr(json['lastname']);
     parentId = JsonParser.toInt(json['parent_id']);
     postcode = JsonParser.toStr(json['postcode']);
+    region = JsonParser.toStr(json['region']);
     street = JsonParser.toStringList(json['street']);
     telephone = JsonParser.toStr(json['telephone']);
   }
@@ -324,6 +327,7 @@ class BillingAddress {
     data['lastname'] = this.lastname;
     data['parent_id'] = this.parentId;
     data['postcode'] = this.postcode;
+    data['region'] = this.region;
     data['street'] = this.street;
     data['telephone'] = this.telephone;
     return data;
@@ -589,6 +593,14 @@ class Items {
     }
     return data;
   }
+
+  /// The item's Row Total as the web panel and Magento's admin show it: the
+  /// subtotal (row_total, before tax) plus tax, less the discount.
+  num get rowTotalWithTax =>
+      (rowTotal ?? 0) +
+      (taxAmount ?? 0) +
+      (discountTaxCompensationAmount ?? 0) -
+      (discountAmount ?? 0);
 }
 
 class ExtensionAttributes {

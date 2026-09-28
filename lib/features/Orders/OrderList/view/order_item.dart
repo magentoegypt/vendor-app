@@ -43,7 +43,9 @@ class OrderItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '#${order.orderId}',
+                      // The order number the vendor, customer and web panel
+                      // use (3000000044), not the internal id (137).
+                      '#${order.incrementId ?? order.orderId}',
                       style: Theme.of(context).textTheme.bodyLarge!.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
