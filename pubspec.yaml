@@ -65,7 +65,9 @@ dev_dependencies:
     sdk: flutter
 
 flutter_icons:
-  image_path: "assets/images/app_icon_transparent.png"
+  # The Hub Market vendor app icon (DEV14). Android 8+ also has an adaptive icon in
+  # res/mipmap-anydpi-v26: this logo on white, sized for the launcher's shape.
+  image_path: "assets/launcher/app_icon.png"
   android: true
   ios: true
   # The "flutter_lints" package below contains a set of recommended lints to
