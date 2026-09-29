@@ -72,7 +72,7 @@ class SingleOrderApiService {
       //
       //await Sentry.captureException(exception, stackTrace: stackTrace);
 
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
       //
 
     }

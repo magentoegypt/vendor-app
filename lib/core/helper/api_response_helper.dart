@@ -4,6 +4,7 @@ import '../../core/config/extensions.dart';
 import '../config/app_exceptions.dart';
 import '../config/logger.dart';
 import '../config/pref_keys.dart';
+import '../values/string_values.dart';
 import 'shared_preferences_helpers.dart';
 
 /// Runs after an authenticated request is rejected with 401 and the stored
@@ -78,7 +79,7 @@ dynamic apiResponseHelper({
 /// or named "%fieldName" placeholders with a parameters object), so they are
 /// substituted here rather than shown raw with the status code.
 String magentoErrorMessage(String body) =>
-    magentoErrorText(body) ?? 'Error Communicating with Server';
+    magentoErrorText(body) ?? StringValues.server_error;
 
 /// Like [magentoErrorMessage], but null when [body] is not a Magento error
 /// (for example a CDN error page).

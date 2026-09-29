@@ -1,9 +1,26 @@
 // ignore_for_file: non_constant_identifier_names
 
-// ignore_for_file: non_constant_identifier_names
+import 'dart:ui' show Locale;
+
+import '../../l10n/app_localizations.dart';
+import '../config/app_constants.dart';
 
 class StringValues {
-  static String get no_internet => 'No Internet connection';
+  /// Texts for the API services, which have no BuildContext: in the app's
+  /// language ([selectedLanguage]), English if that isn't supported.
+  static AppLocalizations get _texts {
+    try {
+      return lookupAppLocalizations(Locale(selectedLanguage));
+    } catch (_) {
+      return lookupAppLocalizations(const Locale('en'));
+    }
+  }
+
+  static String get no_internet => _texts.noInternetConnection;
+
+  /// The server could not be reached, or answered with something that is not
+  /// a readable error (a CDN error page, a cut-off reply).
+  static String get server_error => _texts.serverError;
   static String get email_cannot_empty => 'Email cannot be empty';
   static String get enter_valid_email =>
       'Please enter a valid email address, abc@xyz.com';

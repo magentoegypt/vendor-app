@@ -1153,5 +1153,6 @@
 	 "zipPostalCode":"Zip/Postal Code",
 	 "skuEnglishOnly":"Use English letters, numbers, - and _ only.",
 	 "productNameTooLong":"Use 255 characters or fewer.",
-	 "pendingUpdateNotice":"Your changes were sent for approval. The product is hidden from the store until an admin approves them."
+	 "pendingUpdateNotice":"Your changes were sent for approval. The product is hidden from the store until an admin approves them.",
+	 "serverError":"Something went wrong while contacting the server. Please try again."
 }

@@ -70,7 +70,7 @@ class CreateEditProductApiService {
       rethrow;
     } catch (exception) {
       //await Sentry.captureException(exception, stackTrace: stackTrace);
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
     }
   }
 
@@ -124,7 +124,7 @@ class CreateEditProductApiService {
       rethrow;
     } catch (exception) {
       //await Sentry.captureException(exception, stackTrace: stackTrace);
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
     }
   }
 
@@ -191,7 +191,7 @@ class CreateEditProductApiService {
       // seller account: show it, not a generic network error.
       rethrow;
     } catch (exception, stackTrace) {
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
     }
   }
 
@@ -243,7 +243,7 @@ class CreateEditProductApiService {
       rethrow;
     } catch (exception) {
       //await Sentry.captureException(exception, stackTrace: stackTrace);
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
     }
   }
 
@@ -272,7 +272,7 @@ class CreateEditProductApiService {
       rethrow;
     } catch (exception) {
       //await Sentry.captureException(exception, stackTrace: stackTrace);
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
     }
   }
 
@@ -321,7 +321,7 @@ class CreateEditProductApiService {
       rethrow;
     } catch (exception) {
       //await Sentry.captureException(exception, stackTrace: stackTrace);
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
     }
   }
 
@@ -386,7 +386,7 @@ class CreateEditProductApiService {
       rethrow;
     } catch (exception) {
       //await Sentry.captureException(exception, stackTrace: stackTrace);
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
     }
   }
 }

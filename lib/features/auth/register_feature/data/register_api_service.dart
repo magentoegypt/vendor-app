@@ -67,7 +67,7 @@ class RegisterApiService {
       // Registration errors come back as 400 with a message for the vendor.
       rethrow;
     } catch (exception) {
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
     }
   }
 
@@ -114,7 +114,7 @@ class RegisterApiService {
       // seller account: show it, not a generic network error.
       rethrow;
     } catch (exception, stackTrace) {
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
     }
   }
 

@@ -73,7 +73,7 @@ class ProfileApiService {
       // Keep the server's message (e.g. a validation error) for the vendor.
       rethrow;
     } catch (exception) {
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
     }
   }
 
@@ -120,7 +120,7 @@ class ProfileApiService {
       // seller account: show it, not a generic network error.
       rethrow;
     } catch (exception, stackTrace) {
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
     }
   }
 
@@ -154,7 +154,7 @@ class ProfileApiService {
     } on AppException {
       rethrow;
     } catch (exception) {
-      throw HttpException('Error Communicating with Server');
+      throw HttpException(StringValues.server_error);
     }
   }
 

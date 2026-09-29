@@ -33,11 +33,20 @@ class _ProductsViewState extends State<ProductsWidget> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
   List<ProductItem>? products;
 
+  /// Why the list could not be loaded, shown with a Retry button while there
+  /// is no list to show.
+  String? _error;
+
+  // Every load asks for the same page: reloading with 20 after an edit left
+  // out the rest of a bigger catalogue.
+  void _load() => context
+      .read<ProductsBloc>()
+      .add(const PerformProductList(query: 'searchCriteria[pageSize]=100'));
+
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    context.read<ProductsBloc>().add(PerformProductList(query: 'searchCriteria[pageSize]=100'));
+    _load();
   }
 
   @override
@@ -47,9 +56,7 @@ class _ProductsViewState extends State<ProductsWidget> {
         appBar: AppBars(context,_scaffoldKey,AppLocalizations.of(context)!.products,true,true),
         // drawer: AppDrawer(),
         body: RefreshIndicator(
-          onRefresh:  () async {
-            context.read<ProductsBloc>().add(PerformProductList(query: 'searchCriteria[pageSize]=50'));
-          },
+          onRefresh:  () async => _load(),
           child: Container(
 
             child: BlocListener<ProductsBloc, ProductsState>(
@@ -65,10 +72,16 @@ class _ProductsViewState extends State<ProductsWidget> {
                   if (state is ProductsLoaded) {
                     setState(() {
                       products = state.productListModel.products;
+                      _error = null;
                     });
                   }
                   if (state is ProductsError) {
-                    Tools.showSnackBar(ScaffoldMessenger.of(context),state.errorMessage);
+                    if (products == null && state.errorMessage.trim().isNotEmpty) {
+                      setState(() => _error = state.errorMessage);
+                    } else {
+                      // A refresh failed: keep the list that is showing.
+                      Tools.showSnackBar(ScaffoldMessenger.of(context),state.errorMessage);
+                    }
                   }
                 },
                 child:SafeArea(
@@ -83,9 +96,7 @@ class _ProductsViewState extends State<ProductsWidget> {
                           GestureDetector(
                             onTap: (){
                               Navigator.of(context).push(CupertinoPageRoute(
-                                  builder: (context) => CreateEditProductWidget(productSku: '',))).then((value) {
-                                context.read<ProductsBloc>().add(PerformProductList(query: 'searchCriteria[pageSize]=20'));
-                              });
+                                  builder: (context) => CreateEditProductWidget(productSku: '',))).then((value) => _load());
                             },
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.end,
@@ -104,13 +115,12 @@ class _ProductsViewState extends State<ProductsWidget> {
                                 product: products?[index],
                                 onTap: (){
                                   Navigator.of(context).push(CupertinoPageRoute(
-                                      builder: (context) => CreateEditProductWidget(productSku: products?[index].sku ?? '',))).then((value) {
-                                    context.read<ProductsBloc>().add(const PerformProductList(query: 'searchCriteria[pageSize]=20'));
-                                  });
+                                      builder: (context) => CreateEditProductWidget(productSku: products?[index].sku ?? '',))).then((value) => _load());
                                 },
                               );
                             },
-                          )
+                          ),
+                          if (_error != null && products == null) _errorView(context),
                         ],
                       ),
                     ),
@@ -120,5 +130,27 @@ class _ProductsViewState extends State<ProductsWidget> {
         ));
   }
 
-
+  Widget _errorView(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 80),
+      child: Column(
+        children: [
+          Icon(Icons.cloud_off_outlined, size: 48, color: Theme.of(context).disabledColor),
+          const SizedBox(height: 12),
+          Text(
+            _error!,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            key: const Key('productsRetry'),
+            onPressed: _load,
+            icon: const Icon(Icons.refresh),
+            label: Text(AppLocalizations.of(context)!.retry),
+          ),
+        ],
+      ),
+    );
+  }
 }

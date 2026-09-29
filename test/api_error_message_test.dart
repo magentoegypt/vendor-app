@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:multi_vendor/core/config/app_constants.dart';
 import 'package:multi_vendor/core/helper/api_response_helper.dart';
 
 void main() {
@@ -30,9 +31,17 @@ void main() {
       expect(magentoErrorMessage(body), 'p1 and p10');
     });
 
-    test('non-JSON bodies such as a CDN error page get a generic message', () {
+    test('non-JSON bodies such as a CDN error page get a generic message, '
+        'in the app language (14zb93nvb0p)', () {
+      final previous = selectedLanguage;
+      addTearDown(() => selectedLanguage = previous);
+
+      selectedLanguage = 'en';
       expect(magentoErrorMessage('<html>502 Bad Gateway</html>'),
-          'Error Communicating with Server');
+          'Something went wrong while contacting the server. Please try again.');
+      selectedLanguage = 'ar';
+      expect(magentoErrorMessage('<html>502 Bad Gateway</html>'),
+          'حدث خطأ أثناء الاتصال بالخادم. يرجى المحاولة مرة أخرى.');
       expect(magentoErrorText('<html>502 Bad Gateway</html>'), isNull);
     });
   });
