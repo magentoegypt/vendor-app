@@ -23,6 +23,7 @@ import '../../../../core/helper/shared_preferences_helpers.dart';
 import '../../../../core/utils/category_selection.dart';
 import '../../../../core/utils/json_parser.dart';
 import '../../../../core/utils/numeric_input_formatter.dart';
+import '../../../../core/utils/product_review.dart';
 import '../../../../core/utils/product_url_key.dart';
 import '../bloc/create_edit_product_bloc.dart';
 import '../bloc/create_edit_product_event.dart';
@@ -209,7 +210,14 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
   // 1 Pending New, 2 Approved, 3 Unapproved, 4 Pending Update. Compared by
   // value, since the labels can come back translated in Arabic.
   static const _approved = '2';
-  bool _wasLive = false;
+
+  /// Whether the last save went to the admin for review (see
+  /// [editGoesToReview]); a status change alone applies at once.
+  bool _sentForReview = false;
+
+  /// The product's categories as loaded, to tell a real change from the list
+  /// the app sends on every save.
+  List<String> _savedCategoryIds = [];
 
   /// Whether the product is live (Approved). Saving an edit to a live product
   /// sends it to the admin as Pending Update, and the store hides it until
@@ -518,7 +526,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
 
                     });
                   }else if (state is SaveProductLoaded) {
-                    if (_wasLive) {
+                    if (_sentForReview) {
                       // The edit waits for the admin, and the store hides the
                       // product meanwhile: say so before going back.
                       await showDialog<void>(
@@ -534,6 +542,10 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                         ),
                       );
                       if (!context.mounted) return;
+                    } else if (productItem != null) {
+                      // Saved as it stands, e.g. enabled or disabled at once.
+                      Tools.showSnackBar(ScaffoldMessenger.of(context),
+                          AppLocalizations.of(context)!.productSaved);
                     }
                     Navigator.pop(context);
                   }else if (state is SingleProductLoaded) {
@@ -546,6 +558,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                           });
                         }
                       });
+                      _savedCategoryIds = category_ids.map((id) => '$id').toList();
                       setData();
                       context.read<CreateEditProductBloc>().add(const PerformProductCategories());
                       // Open the product in its own attribute set: the form always
@@ -1004,12 +1017,19 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                 product['id'] = productItem?.id;
                                 product["custom_attributes"] = listcustomAttributes;
                                 getAttributeList();
+                                _sentForReview = editGoesToReview(
+                                  live: _isLive(),
+                                  changedFields: attributes,
+                                  images: media_gallery_entries,
+                                  savedImageCount: productItem?.mediaGalleryEntries?.length ?? 0,
+                                  categoryIds: category_ids,
+                                  savedCategoryIds: _savedCategoryIds,
+                                );
                                 attributes.add("media_gallery_entries");
                                 attributes.add("category_ids");
                                 data["attributes"] = attributes;
                                 data["product"] = product;
                                 print(json.encode(data));
-                                _wasLive = _isLive();
                                 context.read<CreateEditProductBloc>().add(PerformSaveProduct(requestValueMap: data,isUpdate:true));
                               }else{
                                 custom_attributes['url_key'] = productUrlKey(product['name']?.toString(), product['sku']?.toString());
