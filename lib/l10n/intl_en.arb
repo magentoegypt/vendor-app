@@ -1155,5 +1155,8 @@
 	 "productNameTooLong":"Use 255 characters or fewer.",
 	 "pendingUpdateNotice":"Your changes were sent for approval. The product is hidden from the store until an admin approves them.",
 	 "serverError":"Something went wrong while contacting the server. Please try again.",
-	 "productSaved":"Product saved."
+	 "productSaved":"Product saved.",
+	 "downloadable":"Downloadable",
+	 "configurable":"Configurable",
+	 "bundle":"Bundle"
 }
