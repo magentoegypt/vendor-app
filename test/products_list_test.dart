@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show SocketException;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,7 +10,11 @@ import 'package:http/testing.dart';
 import 'package:multi_vendor/core/config/app_constants.dart';
 import 'package:multi_vendor/core/config/app_exceptions.dart';
 import 'package:multi_vendor/core/config/pref_keys.dart';
+import 'package:multi_vendor/core/helper/loading_screen.dart';
+import 'package:multi_vendor/core/helper/overlay_animated_spinner.dart';
 import 'package:multi_vendor/features/Products/ProductList/bloc/products_bloc.dart';
+import 'package:multi_vendor/features/Products/ProductList/bloc/products_event.dart';
+import 'package:multi_vendor/features/Products/ProductList/bloc/products_state.dart';
 import 'package:multi_vendor/features/Products/ProductList/data/products_api_service.dart';
 import 'package:multi_vendor/features/Products/ProductList/data/products_repository.dart';
 import 'package:multi_vendor/features/Products/ProductList/view/products_widget.dart';
@@ -99,6 +105,38 @@ void main() {
       selectedLanguage = 'en';
       await expectLater(service(client).getProductsData('q'), failsWith(serverErrorEn));
     });
+
+    test('only the newest load changes the state', () async {
+      // The old load went out offline: both of its tries hang, then fail.
+      final offline = Completer<void>();
+      var oldTries = 0;
+      final client = MockClient((request) async {
+        if (request.url.toString().endsWith('load=old')) {
+          oldTries++;
+          await offline.future;
+          throw const SocketException('Connection timed out');
+        }
+        return http.Response(list, 200);
+      });
+      final bloc = ProductsBloc(repository: ProductsRepository(service: service(client)));
+      addTearDown(bloc.close);
+      final states = <ProductsState>[];
+      final subscription = bloc.stream.listen(states.add);
+      addTearDown(subscription.cancel);
+
+      bloc.add(const PerformProductList(query: 'load=old'));
+      bloc.add(const PerformProductList(query: 'load=new'));
+      await bloc.stream.firstWhere((state) => state is ProductsLoaded);
+      offline.complete();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(oldTries, 2, reason: 'the old load has failed by now');
+      expect(states, [
+        ProductsLoading(load: 1),
+        ProductsLoading(load: 2),
+        isA<ProductsLoaded>(),
+      ]);
+    });
   });
 
   testWidgets('a failed load shows the message with Retry, and Retry loads the list',
@@ -136,5 +174,70 @@ void main() {
 
     expect(find.text('test add product app'), findsOneWidget);
     expect(find.byKey(const Key('productsRetry')), findsNothing);
+  });
+
+  testWidgets('a load that fails after Products was opened again leaves the new list alone',
+      (tester) async {
+    final previous = selectedLanguage;
+    addTearDown(() => selectedLanguage = previous);
+    selectedLanguage = 'en';
+    // Products opened offline: the first try failed at once, and the second one
+    // hung while the connection came back and failed only later.
+    final hung = Completer<void>();
+    final reopened = Completer<void>();
+    var calls = 0;
+    final client = MockClient((_) async {
+      calls++;
+      if (calls == 1) throw const SocketException('Failed host lookup');
+      if (calls == 2) {
+        await hung.future;
+        throw const SocketException('Connection reset by peer');
+      }
+      await reopened.future;
+      return http.Response(list, 200);
+    });
+    final bloc = ProductsBloc(repository: ProductsRepository(service: service(client)));
+    addTearDown(bloc.close);
+    final navigator = GlobalKey<NavigatorState>();
+    void openProducts() => navigator.currentState!.push(MaterialPageRoute<void>(
+        builder: (_) => BlocProvider<ProductsBloc>.value(value: bloc, child: ProductsWidget())));
+
+    Future<void> settle() async {
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+    }
+
+    await tester.pumpWidget(MaterialApp(
+      navigatorKey: navigator,
+      navigatorObservers: [LoadingScreenObserver()],
+      locale: const Locale('en'),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: const Scaffold(body: Text('dashboard')),
+    ));
+    openProducts();
+    await settle();
+    expect(calls, 2);
+    expect(find.byType(OverLayAnimatedSpinner), findsOneWidget);
+
+    // Back while it hangs, then Products again with the connection back.
+    navigator.currentState!.pop();
+    await settle();
+    expect(find.byType(OverLayAnimatedSpinner), findsNothing);
+    openProducts();
+    await settle();
+    expect(find.byType(OverLayAnimatedSpinner), findsOneWidget,
+        reason: 'the reopened list shows its own spinner');
+
+    reopened.complete();
+    await settle();
+    expect(find.text('test add product app'), findsOneWidget);
+
+    hung.complete();
+    await settle();
+    expect(find.byType(SnackBar), findsNothing);
+    expect(find.text('No internet connection'), findsNothing);
+    expect(find.text('test add product app'), findsOneWidget);
   });
 }

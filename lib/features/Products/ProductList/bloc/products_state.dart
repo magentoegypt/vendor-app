@@ -10,8 +10,14 @@ class ProductsInitial extends ProductsState {
 }
 
 class ProductsLoading extends ProductsState {
+  // Which load this is. A state equal to the current one is not emitted, so
+  // Products opened again while an older load still ran showed no spinner.
+  final int load;
+
+  ProductsLoading({this.load = 0});
+
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [load];
 }
 
 class ProductsLoaded extends ProductsState {
