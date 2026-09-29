@@ -4,7 +4,6 @@ import '../../../../core/config/locator.dart';
 import '../../../../core/config/tools.dart';
 import '../../../../common/flux_image.dart';
 import '../../../../core/config/app_constants.dart';
-import '../../../../core/helper/api_url_helpers.dart';
 import '../../CreateEditProduct/view/create_edit_product_widget.dart';
 import '../data/productListModel.dart';
 
@@ -20,23 +19,13 @@ class VendorAdminProductListCardWidget extends StatelessWidget {
   /// product's own price is 0 and its qty 0 (the store shows "from" prices).
   static const compositeTypes = {'configurable', 'grouped', 'bundle'};
 
-  /// The original file of the image listings use (thumbnail, then
-  /// small_image, then the main image, then the first one). thumbnail_url is
-  /// a small copy the server pads to a square with white, which showed blurred
-  /// and with white bars above and below.
-  static String? listImageUrl(ProductItem? product) {
-    final entries = (product?.mediaGalleryEntries ?? const <MediaGalleryEntries>[])
-        .where((e) => e.disabled != true && (e.file ?? '').isNotEmpty)
-        .toList()
-      ..sort((a, b) => (a.position ?? 0).compareTo(b.position ?? 0));
-    for (final role in const ['thumbnail', 'small_image', 'image']) {
-      for (final entry in entries) {
-        if (entry.types?.contains(role) ?? false) return '$baseProductImageUrl${entry.file}';
-      }
-    }
-    if (entries.isNotEmpty) return '$baseProductImageUrl${entries.first.file}';
-    return product?.thumbnailUrl;
-  }
+  /// The list's image at full size. The list sends only thumbnail_url,
+  /// Magento's 100 px copy padded to a square with white
+  /// (.../media/catalog/product/cache/<hash>/u/n/file.png), which showed
+  /// blurred and with white bars above and below. The original is the same
+  /// path without the cache part.
+  static String? listImageUrl(ProductItem? product) =>
+      product?.thumbnailUrl?.replaceFirst(RegExp(r'/cache/[0-9a-f]{32}/'), '/');
 
   @override
   Widget build(BuildContext context) {

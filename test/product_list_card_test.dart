@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:multi_vendor/core/helper/api_url_helpers.dart';
 import 'package:multi_vendor/core/utils/money.dart';
 import 'package:multi_vendor/features/Products/ProductList/data/productListModel.dart';
 import 'package:multi_vendor/features/Products/ProductList/view/product_list_card_widget.dart';
@@ -10,35 +9,21 @@ void main() {
   setUp(() => Money.storeCurrency = 'AED');
   tearDown(() => Money.storeCurrency = null);
 
-  MediaGalleryEntries entry(String file, {int position = 1, List<String> types = const [], bool disabled = false}) =>
-      MediaGalleryEntries(file: file, position: position, types: types, disabled: disabled);
-
   group('List image (14zb93nvbjb item 5)', () {
-    test("the original file of the thumbnail image, not the server's padded copy", () {
+    test("the original file, not the server's 100 px padded copy", () {
+      // test63's thumbnail_url as /V1/vendors/product sends it: a 100x100 copy
+      // padded with white; the original, 1152x648, has no cache part.
       final product = ProductItem(
-          thumbnailUrl: 'https://multi.magento2.click/media/catalog/product/cache/75x75/a.jpg')
-        ..mediaGalleryEntries = [
-          entry('/a/b/main.jpg', position: 1, types: ['image']),
-          entry('/c/d/thumb.jpg', position: 2, types: ['thumbnail', 'small_image']),
-        ];
+          thumbnailUrl: 'https://hub-market.magento2.click/media/catalog/product/cache/'
+              'd2c3d712a0bbed73870d8655391daf81/u/n/untitled_7.png');
       expect(VendorAdminProductListCardWidget.listImageUrl(product),
-          '$baseProductImageUrl/c/d/thumb.jpg');
+          'https://hub-market.magento2.click/media/catalog/product/u/n/untitled_7.png');
     });
 
-    test('without roles, the first enabled image by position', () {
-      final product = ProductItem()
-        ..mediaGalleryEntries = [
-          entry('/x/hidden.jpg', position: 1, disabled: true),
-          entry('/x/second.jpg', position: 3),
-          entry('/x/first.jpg', position: 2),
-        ];
-      expect(VendorAdminProductListCardWidget.listImageUrl(product),
-          '$baseProductImageUrl/x/first.jpg');
-    });
-
-    test('with no images, thumbnail_url as before', () {
-      expect(VendorAdminProductListCardWidget.listImageUrl(ProductItem(thumbnailUrl: 'https://x/t.jpg')),
-          'https://x/t.jpg');
+    test('other images (a placeholder) are shown as sent', () {
+      const placeholder = 'https://hub-market.magento2.click/static/frontend/placeholder/thumbnail.jpg';
+      expect(VendorAdminProductListCardWidget.listImageUrl(ProductItem(thumbnailUrl: placeholder)),
+          placeholder);
       expect(VendorAdminProductListCardWidget.listImageUrl(ProductItem()), isNull);
     });
   });
