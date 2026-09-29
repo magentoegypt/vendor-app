@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../core/config/pref_keys.dart';
 import '../../../core/helper/store_currency.dart';
+import '../../../core/helper/store_time.dart';
 import '../../../core/config/tools.dart';
 import '../../../features/home/data/DashboarModel.dart';
 import '../../../features/home/view/sale_stats_chart.dart';
@@ -45,6 +46,9 @@ class _DashboardViewState extends State<DashboardWidget> {
     super.initState();
     context.read<DashboardBloc>().add(const PerformDashboard());
     StoreCurrency.load(onChanged: () {
+      if (mounted) setState(() {});
+    });
+    StoreTime.load(onChanged: () {
       if (mounted) setState(() {});
     });
   }

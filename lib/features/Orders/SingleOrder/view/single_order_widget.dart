@@ -9,6 +9,7 @@ import '../../../../core/config/tools.dart';
 import '../../../../core/helper/country_names.dart';
 import '../../../../core/helper/loading_screen.dart';
 import '../../../../core/helper/shared_preferences_helpers.dart';
+import '../../../../core/helper/store_time.dart';
 import '../../../../core/utils/bidi_text.dart';
 import '../../SingleOrder/bloc/single_order_state.dart';
 import '../../SingleOrder/data/OrderModel.dart';
@@ -70,7 +71,8 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                    if (state is SingleOrderLoaded) {
                     setState(() {
                       orderModel = state.orderModel;
-                      orderDate = _parseUtcDate(orderModel?.createdAt);
+                      // In the store's timezone, like the web panel, not the phone's.
+                      orderDate = StoreTime.of(orderModel?.createdAt);
                     });
                   }
                   if (state is OrderError) {
@@ -101,7 +103,7 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                              // _buildRow('Order #', '000000017 (The order confirmation email is not sent)'),
                               _buildRow(AppLocalizations.of(context)!.orderNo, orderModel?.incrementId ?? '', singleLine: true),
                               // An English date: kept left to right, or Arabic layout moves the day to the end.
-                              _buildRow(AppLocalizations.of(context)!.orderDate, orderDate == null ? '' : BidiText.leftToRight(DateFormat('d MMM yyyy, hh:mm:ss a').format(orderDate!.toLocal()))),
+                              _buildRow(AppLocalizations.of(context)!.orderDate, orderDate == null ? '' : BidiText.leftToRight(DateFormat('d MMM yyyy, hh:mm:ss a').format(orderDate!))),
                               _buildRow(AppLocalizations.of(context)!.orderstatus, Tools.getOrderStatus(context,orderModel?.status ?? "")),
                               // _buildRow('Purchased From', 'Main Website Store - Arabic'),
                               Container(
@@ -404,12 +406,6 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
     final info = orderModel?.payment?.additionalInformation;
     if (info != null && info.isNotEmpty) return info.first;
     return orderModel?.paymentMethod ?? '';
-  }
-
-  /// Magento sends created_at as UTC without a zone, e.g. "2026-09-13 12:47:22".
-  DateTime? _parseUtcDate(String? value) {
-    if (value == null || value.isEmpty) return null;
-    return DateTime.tryParse('${value}Z') ?? DateTime.tryParse(value);
   }
 
 }

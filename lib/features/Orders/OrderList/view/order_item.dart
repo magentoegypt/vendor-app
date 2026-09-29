@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:multi_vendor/core/config/locator.dart';
 import '../../../../core/config/tools.dart';
+import '../../../../core/helper/store_time.dart';
 import '../../SingleOrder/view/single_order_widget.dart';
 import '../data/orderListModel.dart';
 
@@ -19,7 +20,9 @@ class OrderItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
+    // The store's date, as on the web panel: created_at is UTC, so orders
+    // placed just after midnight in Riyadh showed the day before.
+    final placed = StoreTime.of(order.createdAt);
 
     return InkWell(
       onTap: onCallBack != null
@@ -61,7 +64,7 @@ class OrderItem extends StatelessWidget {
                       height: 3,
                     ),
                     Text(
-                       DateFormat('MM/dd/yyyy').format(Tools.stringtoDate(order.createdAt ?? "", "yyyy-MM-dd HH:mm:ss")),
+                      placed == null ? '' : DateFormat('MM/dd/yyyy').format(placed),
                       style: const TextStyle(fontSize: 10.0),
                     ),
                     const SizedBox(height: 3),
