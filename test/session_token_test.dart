@@ -20,8 +20,19 @@ void main() {
   Future<String?> stored() async =>
       (await SharedPreferences.getInstance()).getString(authTokenPrefKey);
 
+  String jwt({DateTime? iat, required DateTime exp}) {
+    String part(Object value) =>
+        base64Url.encode(utf8.encode(json.encode(value))).replaceAll('=', '');
+    return '${part({'alg': 'HS256'})}.'
+        '${part({
+          'uid': 51,
+          if (iat != null) 'iat': iat.millisecondsSinceEpoch ~/ 1000,
+          'exp': exp.millisecondsSinceEpoch ~/ 1000,
+        })}.sig';
+  }
+
   group('Seller session (14zb93nv65d)', () {
-    test('a token under 30 minutes old is sent as it is', () async {
+    test('a 24-hour token under 12 hours old is sent as it is', () async {
       signedIn(at: issued);
       var calls = 0;
       final client = MockClient((_) async {
@@ -30,7 +41,7 @@ void main() {
       });
 
       final token = await SessionToken.current(
-          client: client, now: issued.add(const Duration(minutes: 29)));
+          client: client, now: issued.add(const Duration(hours: 11, minutes: 59)));
 
       expect(token, 'old');
       expect(calls, 0);
@@ -43,14 +54,14 @@ void main() {
         sent = request;
         return http.Response('"new"', 200);
       });
-      final now = issued.add(const Duration(minutes: 31));
+      final now = issued.add(const Duration(hours: 12, minutes: 1));
 
       expect(await SessionToken.current(client: client, now: now), 'new');
       expect(sent.method, 'POST');
       expect(sent.url.path, '/rest/V1/vendors/me/token/refresh');
       expect(sent.headers['Authorization'], 'Bearer old');
       expect(await stored(), 'new');
-      // The new token's hour starts now: no second refresh.
+      // The new token's 24 hours start now: no second refresh.
       expect(
           await SessionToken.current(
               client: client, now: now.add(const Duration(minutes: 5))),
@@ -65,7 +76,7 @@ void main() {
         await Future<void>.delayed(const Duration(milliseconds: 20));
         return http.Response('"new"', 200);
       });
-      final now = issued.add(const Duration(minutes: 45));
+      final now = issued.add(const Duration(hours: 18));
 
       final tokens = await Future.wait(
           [for (var i = 0; i < 3; i++) SessionToken.current(client: client, now: now)]);
@@ -81,13 +92,13 @@ void main() {
           '{"message":"The consumer isn\'t authorized to access %resources."}', 401));
 
       final token = await SessionToken.current(
-          client: client, now: issued.add(const Duration(minutes: 45)));
+          client: client, now: issued.add(const Duration(hours: 18)));
 
       expect(token, 'old');
       expect(await stored(), 'old');
     });
 
-    test('a token past its hour is not sent to refresh (it could only be refused)',
+    test('a token past its life is not sent to refresh (it could only be refused)',
         () async {
       signedIn(at: issued);
       var calls = 0;
@@ -97,37 +108,62 @@ void main() {
       });
 
       final token = await SessionToken.current(
-          client: client, now: issued.add(const Duration(minutes: 61)));
+          client: client, now: issued.add(const Duration(hours: 24, minutes: 1)));
 
       expect(token, 'old');
       expect(calls, 0);
     });
 
-    test("the JWT's own expiry decides, even without a saved issue time",
+    test("the JWT's own times decide, even without a saved issue time",
         () async {
-      String jwt(DateTime expires) {
-        String part(Object value) =>
-            base64Url.encode(utf8.encode(json.encode(value))).replaceAll('=', '');
-        return '${part({'alg': 'HS256'})}.'
-            '${part({'uid': 51, 'exp': expires.millisecondsSinceEpoch ~/ 1000})}.sig';
-      }
       var calls = 0;
       final client = MockClient((_) async {
         calls++;
         return http.Response('"new"', 200);
       });
-      final now = issued.add(const Duration(minutes: 10));
+      final now = issued.add(const Duration(hours: 1));
 
-      signedIn(token: jwt(now.add(const Duration(minutes: 50))));
+      // A 24-hour token 11 hours old, then one 13 hours old.
+      signedIn(token: jwt(
+          iat: now.subtract(const Duration(hours: 11)),
+          exp: now.add(const Duration(hours: 13))));
       expect(await SessionToken.current(client: client, now: now), isNot('new'));
       expect(calls, 0);
 
-      signedIn(token: jwt(now.add(const Duration(minutes: 20))));
+      signedIn(token: jwt(
+          iat: now.subtract(const Duration(hours: 13)),
+          exp: now.add(const Duration(hours: 11))));
       expect(await SessionToken.current(client: client, now: now), 'new');
       expect(calls, 1);
 
-      signedIn(token: jwt(now.subtract(const Duration(minutes: 1))));
+      signedIn(token: jwt(
+          iat: now.subtract(const Duration(hours: 25)),
+          exp: now.subtract(const Duration(hours: 1))));
       expect(await SessionToken.current(client: client, now: now), isNot('new'));
+      expect(calls, 1);
+    });
+
+    test('a one-hour token from before the change is refreshed after 30 minutes',
+        () async {
+      var calls = 0;
+      final client = MockClient((_) async {
+        calls++;
+        return http.Response('"new"', 200);
+      });
+      final hourToken = jwt(exp: issued.add(const Duration(minutes: 60)));
+
+      signedIn(token: hourToken, at: issued);
+      expect(
+          await SessionToken.current(
+              client: client, now: issued.add(const Duration(minutes: 29))),
+          hourToken);
+      expect(calls, 0);
+
+      signedIn(token: hourToken, at: issued);
+      expect(
+          await SessionToken.current(
+              client: client, now: issued.add(const Duration(minutes: 31))),
+          'new');
       expect(calls, 1);
     });
 

@@ -8,21 +8,22 @@ import 'shared_preferences_helpers.dart';
 
 /// The seller's token for a request, renewed while the app is in use.
 ///
-/// Seller tokens live an hour, and sellers log in with a WhatsApp code, so
-/// the app cannot sign in again by itself: sellers were logged out every
-/// hour. Once a token is [refreshAfter] old, the next request first swaps it
-/// for a new one (POST /V1/vendors/me/token/refresh). A seller who keeps
-/// using the app stays in; one who leaves it idle for the hour is logged out
-/// as before.
+/// Seller tokens live 24 hours (one hour until 2026-09-28), and sellers log
+/// in with a WhatsApp code, so the app cannot sign in again by itself. Once a
+/// token is halfway through its life, 12 hours for a 24-hour token, the next
+/// request first swaps it for a new one (POST /V1/vendors/me/token/refresh).
+/// A seller who opens the app at least once a day stays in; one who stays
+/// away longer than the token's life logs in again.
 ///
-/// A refresh revokes all of the seller's older tokens, which also signs the
-/// seller out on any other phone. Only one runs at a time: requests made
-/// meanwhile wait for it and use the new token.
+/// A refresh leaves the seller's other tokens working, so other phones stay
+/// signed in. Only one runs at a time: requests made meanwhile wait for it
+/// and use the new token.
 class SessionToken {
   SessionToken._();
 
-  static const lifetime = Duration(minutes: 60);
-  static const refreshAfter = Duration(minutes: 30);
+  /// A token's life when neither the token nor the app records it: the
+  /// backend's setting since 2026-09-28.
+  static const defaultLifetime = Duration(hours: 24);
 
   static Future<String?>? _refreshing;
 
@@ -35,19 +36,26 @@ class SessionToken {
         id: (now ?? DateTime.now()).millisecondsSinceEpoch);
   }
 
-  /// The token to send, refreshed first once it is [refreshAfter] old. Its
-  /// age comes from the JWT's own expiry, or else from when it was saved; a
-  /// token with neither is refreshed on first use.
+  /// The token to send, refreshed first once half of its life has passed.
+  /// Its life runs from the JWT's "iat" (or else when the app saved it) to
+  /// its "exp" (or else [defaultLifetime] after saving); a token with none
+  /// of these is refreshed on first use.
   static Future<String?> current({http.Client? client, DateTime? now}) async {
     final prefs = SharedPreferencesHelpers();
     final token = await prefs.getStringData(key: authTokenPrefKey);
     if (token == null || token.isEmpty) return token;
-    final expiresAt = _expiry(token) ?? await _expiryFromSave(prefs);
+    final claims = _claims(token);
+    final savedAt = await _savedAt(prefs);
+    final issuedAt = _time(claims['iat']) ?? savedAt;
+    final expiresAt = _time(claims['exp']) ?? savedAt?.add(defaultLifetime);
     if (expiresAt != null) {
       final left = expiresAt.difference(now ?? DateTime.now());
-      // Past its hour a token can only be refused, so it is not sent to be
+      final life = issuedAt == null
+          ? defaultLifetime
+          : expiresAt.difference(issuedAt);
+      // Past its expiry a token can only be refused, so it is not sent to be
       // refreshed: the request's own 401 sends the seller to log in.
-      if (left <= Duration.zero || left > lifetime - refreshAfter) return token;
+      if (left <= Duration.zero || left > life ~/ 2) return token;
     }
     // A block body: an arrow would hand back this same future, and
     // whenComplete would wait for itself.
@@ -79,27 +87,27 @@ class SessionToken {
     }
   }
 
-  /// When a seller token expires, from the "exp" claim of the JWT.
-  static DateTime? _expiry(String token) {
+  /// The claims of a seller token (a JWT), or none for anything else.
+  static Map _claims(String token) {
     final parts = token.split('.');
-    if (parts.length != 3) return null;
+    if (parts.length != 3) return const {};
     try {
       final payload = json.decode(
           utf8.decode(base64Url.decode(base64Url.normalize(parts[1]))));
-      final exp = payload is Map ? payload['exp'] : null;
-      return exp is num
-          ? DateTime.fromMillisecondsSinceEpoch((exp * 1000).round())
-          : null;
+      return payload is Map ? payload : const {};
     } catch (_) {
-      return null;
+      return const {};
     }
   }
 
-  static Future<DateTime?> _expiryFromSave(SharedPreferencesHelpers prefs) async {
-    final issuedAt = await prefs.getIntData(key: authTokenIssuedAtPrefKey);
-    return issuedAt == null
-        ? null
-        : DateTime.fromMillisecondsSinceEpoch(issuedAt).add(lifetime);
+  /// A JWT time claim, in seconds since the epoch.
+  static DateTime? _time(Object? seconds) => seconds is num
+      ? DateTime.fromMillisecondsSinceEpoch((seconds * 1000).round())
+      : null;
+
+  static Future<DateTime?> _savedAt(SharedPreferencesHelpers prefs) async {
+    final savedAt = await prefs.getIntData(key: authTokenIssuedAtPrefKey);
+    return savedAt == null ? null : DateTime.fromMillisecondsSinceEpoch(savedAt);
   }
 
   /// The refresh endpoint answers with a JSON string; an object with "token"
