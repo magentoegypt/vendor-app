@@ -1154,6 +1154,8 @@
 	 "skuEnglishOnly":"Use English letters, numbers, - and _ only.",
 	 "productNameTooLong":"Use 255 characters or fewer.",
 	 "pendingUpdateNotice":"Your changes were sent for approval. The product is hidden from the store until an admin approves them.",
+	 "pendingUpdateFields":"Waiting for admin approval: {fields}. Any other changes you made are saved. The product is hidden from the store until an admin approves these changes.",
+	 "@pendingUpdateFields": {"placeholders": {"fields": {"type": "String"}}},
 	 "serverError":"Something went wrong while contacting the server. Please try again.",
 	 "productSaved":"Product saved.",
 	 "downloadable":"Downloadable",

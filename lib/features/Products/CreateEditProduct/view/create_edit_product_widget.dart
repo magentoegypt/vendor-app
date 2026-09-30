@@ -212,8 +212,14 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
   static const _approved = '2';
 
   /// Whether the last save went to the admin for review (see
-  /// [editGoesToReview]); a status change alone applies at once.
+  /// [editGoesToReview]); a status or quantity change alone applies at once.
+  /// Used only when the save's reply cannot be read.
   bool _sentForReview = false;
+
+  /// What the last edit changed and sent, to find the changes the server kept
+  /// for the admin from its reply (see [changesAwaitingApproval]).
+  List<String> _changedFields = [];
+  Map<String, dynamic>? _sentProduct;
 
   /// The product's categories as loaded, to tell a real change from the list
   /// the app sends on every save.
@@ -229,6 +235,20 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
       }
     }
     return false;
+  }
+
+  /// Changes named as the form labels them, e.g. "Product Name, Price".
+  String _fieldLabels(List<String> codes) {
+    final texts = AppLocalizations.of(context)!;
+    final names = codes.map((code) {
+      if (code == 'media_gallery_entries') return texts.imageGallery;
+      if (code == 'category_ids') return texts.categoriesProduct;
+      for (final attribute in list) {
+        if (attribute.attributeCode == code) return attribute.defaultFrontendLabel ?? code;
+      }
+      return code;
+    });
+    return names.join(Localizations.localeOf(context).languageCode == 'ar' ? '، ' : ', ');
   }
 
   /// Shows the attribute set in use. The dropdown showed the first set
@@ -526,13 +546,23 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
 
                     });
                   }else if (state is SaveProductLoaded) {
-                    if (_sentForReview) {
+                    // What the server kept for the admin, read from its reply:
+                    // on a live product the name and price wait, while the
+                    // quantity and status apply at once (QA, 2026-09-30).
+                    final saved = state.productListModel.products;
+                    final waiting = productItem != null && _sentProduct != null && (saved?.isNotEmpty ?? false)
+                        ? changesAwaitingApproval(changedFields: _changedFields, sent: _sentProduct!, reply: saved!.first.toJson())
+                        : null;
+                    if (waiting?.isNotEmpty ?? _sentForReview) {
                       // The edit waits for the admin, and the store hides the
-                      // product meanwhile: say so before going back.
+                      // product meanwhile: say what waits before going back.
+                      final message = waiting == null
+                          ? AppLocalizations.of(context)!.pendingUpdateNotice
+                          : AppLocalizations.of(context)!.pendingUpdateFields(_fieldLabels(waiting));
                       await showDialog<void>(
                         context: context,
                         builder: (dialogContext) => AlertDialog(
-                          content: Text(AppLocalizations.of(context)!.pendingUpdateNotice),
+                          content: Text(message),
                           actions: [
                             TextButton(
                               onPressed: () => Navigator.of(dialogContext).pop(),
@@ -543,7 +573,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                       );
                       if (!context.mounted) return;
                     } else if (productItem != null) {
-                      // Saved as it stands, e.g. enabled or disabled at once.
+                      // Saved as it stands, e.g. enabled, disabled or restocked.
                       Tools.showSnackBar(ScaffoldMessenger.of(context),
                           AppLocalizations.of(context)!.productSaved);
                     }
@@ -1025,6 +1055,14 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                   categoryIds: category_ids,
                                   savedCategoryIds: _savedCategoryIds,
                                 );
+                                _changedFields = [
+                                  ...attributes,
+                                  if (imagesChanged(images: media_gallery_entries, savedImageCount: productItem?.mediaGalleryEntries?.length ?? 0))
+                                    "media_gallery_entries",
+                                  if (categoriesChanged(categoryIds: category_ids, savedCategoryIds: _savedCategoryIds))
+                                    "category_ids",
+                                ];
+                                _sentProduct = product;
                                 attributes.add("media_gallery_entries");
                                 attributes.add("category_ids");
                                 data["attributes"] = attributes;

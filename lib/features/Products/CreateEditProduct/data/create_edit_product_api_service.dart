@@ -137,6 +137,13 @@ class CreateEditProductApiService {
         isUpdate:isUpdate
     );
     try {
+      // The save answers with the product itself, as it now stands on the
+      // server: keep it, so the form can tell which changes wait for the admin.
+      if (responseBody is Map<String, dynamic> &&
+          !responseBody.containsKey('items') &&
+          responseBody.containsKey('sku')) {
+        return ProductListModel(products: [ProductItem.fromJson(responseBody)], totalCount: 1);
+      }
       return ProductListModel.fromJson(responseBody);
     } catch (exception, stackTrace) {
       //
