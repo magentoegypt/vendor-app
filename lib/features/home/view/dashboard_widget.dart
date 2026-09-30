@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/config/pref_keys.dart';
 import '../../../core/helper/store_currency.dart';
 import '../../../core/helper/store_time.dart';
+import '../../../core/utils/numerals.dart';
 import '../../../core/config/tools.dart';
 import '../../../features/home/data/DashboarModel.dart';
 import '../../../features/home/view/sale_stats_chart.dart';
@@ -183,7 +184,7 @@ class _DashboardViewState extends State<DashboardWidget> {
                               SizedBox(width: 10),
                               SaleStatsWidget(
                                 title: AppLocalizations.of(context)!.totalProducts,
-                                amount: (dashboardModel?.totalProducts ?? "").toString(),
+                                amount: Numerals.of(context, (dashboardModel?.totalProducts ?? "").toString()),
                               ),
                             ],
                           ),

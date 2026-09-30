@@ -9,6 +9,8 @@ import 'package:multi_vendor/core/config/app_constants.dart';
 import 'package:multi_vendor/core/config/pref_keys.dart';
 import 'package:multi_vendor/core/config/tools.dart';
 import 'package:multi_vendor/core/utils/money.dart';
+import 'package:multi_vendor/core/utils/numerals.dart';
+import 'package:multi_vendor/features/home/data/DashboarModel.dart';
 import 'package:multi_vendor/features/Orders/OrderList/data/orders_api_service.dart';
 import 'package:multi_vendor/features/Orders/OrderList/data/orders_repository.dart';
 import 'package:multi_vendor/features/home/bloc/dashboard_bloc.dart';
@@ -135,6 +137,8 @@ void main() {
     ));
     await settle();
     expect(find.text(arabicCredit), findsOneWidget);
+    // Total Products follows the language as well (14zb93nvgfn): 14 in Arabic-Indic.
+    expect(find.text('١٤'), findsOneWidget);
 
     selectedLanguage = 'en';
     locale.value = const Locale('en');
@@ -144,5 +148,41 @@ void main() {
     expect(find.text('AED 24,993.00'), findsOneWidget);
     expect(find.text('AED 26,000.00'), findsOneWidget);
     expect(find.text(arabicCredit), findsNothing);
+    expect(find.text('14'), findsOneWidget);
+    expect(find.text('١٤'), findsNothing);
+  });
+
+  group('Numbers follow the app language (14zb93nvgfn)', () {
+    test('Arabic writes Arabic-Indic digits, English keeps Western ones', () {
+      expect(Numerals.forLanguage('14', 'ar'), '١٤');
+      expect(Numerals.forLanguage('9-28', 'ar'), '٩-٢٨');
+      expect(Numerals.forLanguage('14', 'en'), '14');
+      expect(Numerals.forLanguage('9-28', 'en'), '9-28');
+    });
+
+    testWidgets('the chart axes use the app language digits', (tester) async {
+      final stats = [
+        OrderChartData.fromJson({'time': '2026-9-27', 'number_of_order': 0}),
+        OrderChartData.fromJson({'time': '2026-9-28', 'number_of_order': 46}),
+      ];
+      Future<void> show(Locale locale) async {
+        await tester.pumpWidget(MaterialApp(
+          locale: locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(body: SaleStatsChart(saleStats: stats)),
+        ));
+        await tester.pump();
+      }
+
+      await show(const Locale('ar'));
+      expect(find.text('٩-٢٨'), findsOneWidget); // 9-28
+      expect(find.text('٥٠'), findsOneWidget); // 50 on the Y axis
+      expect(find.text('9-28'), findsNothing);
+
+      await show(const Locale('en'));
+      expect(find.text('9-28'), findsOneWidget);
+      expect(find.text('50'), findsOneWidget);
+    });
   });
 }

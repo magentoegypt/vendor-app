@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import '../../../core/utils/numerals.dart';
 import '../data/DashboarModel.dart';
 
 
@@ -92,7 +93,8 @@ class SaleStatsChart extends StatelessWidget {
                   showTitles: true,
                   reservedSize: 32,
                   interval: step,
-                  getTitlesWidget: leftTitles,
+                  getTitlesWidget: (double value, TitleMeta meta) =>
+                      leftTitles(value, meta, context),
                 ),
               ),
             ),
@@ -113,12 +115,14 @@ class SaleStatsChart extends StatelessWidget {
     );
   }
 
-  /// Order counts: whole numbers only ("3", not "3.0").
-  Widget leftTitles(double value, TitleMeta meta) {
+  /// Order counts: whole numbers only ("3", not "3.0"), in the app language's
+  /// digits like the rest of the Dashboard.
+  Widget leftTitles(double value, TitleMeta meta, BuildContext context) {
     if (value != value.roundToDouble()) return const SizedBox.shrink();
     return SideTitleWidget(
       axisSide: meta.axisSide,
-      child: Text(value.toInt().toString(), style: const TextStyle(fontSize: 11)),
+      child: Text(Numerals.of(context, value.toInt().toString()),
+          style: const TextStyle(fontSize: 11)),
     );
   }
 
@@ -132,7 +136,7 @@ class SaleStatsChart extends StatelessWidget {
       axisSide: meta.axisSide,
       space: 7, //margin top
       child: Text(
-        shortDate(stats[index].time),
+        Numerals.of(context, shortDate(stats[index].time)),
         style: TextStyle(
           fontSize: 10,
           color: Theme.of(context).colorScheme.secondary,
