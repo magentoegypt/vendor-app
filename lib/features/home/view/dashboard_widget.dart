@@ -53,6 +53,22 @@ class _DashboardViewState extends State<DashboardWidget> {
     });
   }
 
+  // The language the cards were loaded in. They show the amounts as the
+  // server formats them for that language, so after switching from Arabic to
+  // English they kept Arabic digits and the Arabic dirham sign until a pull
+  // to refresh. A language change loads the Dashboard again.
+  String? _loadedLanguage;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final language = Localizations.localeOf(context).languageCode;
+    if (_loadedLanguage != null && language != _loadedLanguage) {
+      context.read<DashboardBloc>().add(const PerformDashboard());
+    }
+    _loadedLanguage = language;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

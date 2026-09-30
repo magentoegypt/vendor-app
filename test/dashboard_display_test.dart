@@ -1,8 +1,23 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:multi_vendor/core/config/app_constants.dart';
+import 'package:multi_vendor/core/config/pref_keys.dart';
 import 'package:multi_vendor/core/config/tools.dart';
 import 'package:multi_vendor/core/utils/money.dart';
+import 'package:multi_vendor/features/Orders/OrderList/data/orders_api_service.dart';
+import 'package:multi_vendor/features/Orders/OrderList/data/orders_repository.dart';
+import 'package:multi_vendor/features/home/bloc/dashboard_bloc.dart';
+import 'package:multi_vendor/features/home/data/dasboard_api_service.dart';
+import 'package:multi_vendor/features/home/data/dashboard_repository.dart';
+import 'package:multi_vendor/features/home/view/dashboard_widget.dart';
 import 'package:multi_vendor/features/home/view/sale_stats_chart.dart';
+import 'package:multi_vendor/l10n/app_localizations.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   setUp(() {
@@ -59,5 +74,75 @@ void main() {
       expect(month.last, isTrue);
       expect(month.where((shown) => shown).length, 10);
     });
+  });
+
+  testWidgets('switching the language loads the cards again, formatted for it',
+      (tester) async {
+    final previous = selectedLanguage;
+    addTearDown(() => selectedLanguage = previous);
+    SharedPreferences.setMockInitialValues({
+      authTokenPrefKey: 'seller-token',
+      authTokenIssuedAtPrefKey: DateTime.now().millisecondsSinceEpoch,
+    });
+    // The server formats the cards for the store view it is asked through, as
+    // on the phone: Arabic digits and the Arabic dirham sign through /rest/ar/.
+    const arabicCredit = '٢٤٬٩٩٣٫٠٠ د.إ.‏';
+    final dashboards = <String>[];
+    final client = MockClient((request) async {
+      final path = request.url.path;
+      if (path.endsWith('/V1/vendors/dashboard')) {
+        dashboards.add(path);
+        final arabic = path.contains('/rest/ar/');
+        return http.Response(
+            jsonEncode({
+              'credit_amount': arabic ? arabicCredit : 'AED 24,993.00',
+              'lifetime_sales': arabic ? '٢٦٬٠٠٠٫٠٠ د.إ.‏' : 'AED 26,000.00',
+              'average_orders': arabic ? '٧٢٢٫٢٢ د.إ.‏' : 'AED 722.22',
+              'total_products': 14,
+            }),
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'});
+      }
+      if (path.contains('/V1/vendors/order')) {
+        return http.Response(jsonEncode({'items': [], 'total_count': 0}), 200);
+      }
+      return http.Response(jsonEncode({'id': 1}), 200);
+    });
+    final bloc = DashboardBloc(
+      repository: DashboardRepository(service: DasboardApiService(httpClient: client)),
+      ordersRepository: OrdersRepository(service: OrdersApiService(httpClient: client)),
+    );
+    addTearDown(bloc.close);
+
+    Future<void> settle() async {
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+    }
+
+    // What MainApp.setLocale does: the app rebuilds in the new language, and
+    // the Dashboard under the language dialog stays where it is.
+    final locale = ValueNotifier(const Locale('ar'));
+    selectedLanguage = 'ar';
+    await tester.pumpWidget(ValueListenableBuilder<Locale>(
+      valueListenable: locale,
+      builder: (_, value, __) => MaterialApp(
+        locale: value,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: BlocProvider<DashboardBloc>.value(value: bloc, child: const DashboardWidget()),
+      ),
+    ));
+    await settle();
+    expect(find.text(arabicCredit), findsOneWidget);
+
+    selectedLanguage = 'en';
+    locale.value = const Locale('en');
+    await settle();
+
+    expect(dashboards, ['/rest/ar/V1/vendors/dashboard', '/rest/en/V1/vendors/dashboard']);
+    expect(find.text('AED 24,993.00'), findsOneWidget);
+    expect(find.text('AED 26,000.00'), findsOneWidget);
+    expect(find.text(arabicCredit), findsNothing);
   });
 }
