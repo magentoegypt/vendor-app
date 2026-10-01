@@ -8,6 +8,7 @@ import 'package:multi_vendor/common/AppDrawer.dart';
 import 'package:multi_vendor/core/config/app_constants.dart';
 import 'package:multi_vendor/features/Products/CreateEditProduct/view/widgets/ImagePicker.dart';
 import 'package:multi_vendor/features/Products/CreateEditProduct/view/widgets/list_image_select.dart';
+import 'package:multi_vendor/features/Products/CreateEditProduct/view/widgets/pending_approval_notice.dart';
 import 'package:multi_vendor/features/Products/CreateEditProduct/view/widgets/product_date_widget.dart';
 import 'package:multi_vendor/features/Products/CreateEditProduct/view/widgets/product_info_dropdown.dart';
 import 'package:multi_vendor/features/Products/CreateEditProduct/view/widgets/product_switch_button.dart';
@@ -228,14 +229,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
   /// Whether the product is live (Approved). Saving an edit to a live product
   /// sends it to the admin as Pending Update, and the store hides it until
   /// the edit is approved.
-  bool _isLive() {
-    for (final attribute in productItem?.customAttributes ?? <CustomAttributes>[]) {
-      if (attribute.attributeCode == 'approval') {
-        return attribute.value?.toString() == _approved;
-      }
-    }
-    return false;
-  }
+  bool _isLive() => productItem?.approval == _approved;
 
   /// Changes named as the form labels them, e.g. "Product Name, Price".
   String _fieldLabels(List<String> codes) {
@@ -618,6 +612,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children:  [
+                          PendingApprovalNotice(approval: productItem?.approval),
                           ProductInfoDropdownWidget(
                             label:AppLocalizations.of(context)!.attributeSet,
                             productAttributeModel: attributeproductAttributeModel,

@@ -82,6 +82,10 @@ class VendorAdminProductListCardWidget extends StatelessWidget {
                         color: Colors.blue,
                       ),
                     ),
+                  if (product?.awaitsApproval ?? false) ...[
+                    const SizedBox(height: 6),
+                    _awaitingApproval(context),
+                  ],
                   const SizedBox(height: 20),
                   Row(
                     children: [
@@ -125,6 +129,20 @@ class VendorAdminProductListCardWidget extends StatelessWidget {
       ),
     );
   }
+
+  /// "Waiting for approval": the admin has yet to approve the product or its
+  /// latest edit, so the store hides it and the card shows it as it was.
+  Widget _awaitingApproval(BuildContext context) => Row(
+        key: const Key('awaitingApproval'),
+        children: [
+          Icon(Icons.hourglass_top, size: 14, color: Colors.orange.shade800),
+          const SizedBox(width: 4),
+          Flexible(
+            child: Text(AppLocalizations.of(context)!.awaitingApproval,
+                style: TextStyle(fontSize: 12.0, color: Colors.orange.shade900)),
+          ),
+        ],
+      );
 
   String getProductType(BuildContext context, String type){
     final texts = AppLocalizations.of(context)!;

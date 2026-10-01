@@ -79,6 +79,21 @@ class ProductItem {
     thumbnailUrl = JsonParser.toStr(json['thumbnail_url']);
   }
 
+  /// The product's Vnecoms approval value, as the approval attribute lists
+  /// it: '0' Not Submitted, '1' Pending New, '2' Approved, '3' Unapproved,
+  /// '4' Pending Update. Null when the product does not carry it.
+  String? get approval {
+    for (final attribute in customAttributes ?? const <CustomAttributes>[]) {
+      if (attribute.attributeCode == 'approval') return attribute.value?.toString();
+    }
+    return null;
+  }
+
+  /// Whether the admin has yet to approve the product (Pending New) or its
+  /// latest edit (Pending Update). Until then the store hides it, and the app
+  /// shows it as it was.
+  bool get awaitsApproval => approval == '1' || approval == '4';
+
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['qty'] = this.qty;
