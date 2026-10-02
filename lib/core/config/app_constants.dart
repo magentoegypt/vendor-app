@@ -25,5 +25,6 @@ const kImageProxy = '';
 const kCacheImageWidth = 700;
 const kDefaultImage =
     'https://trello.com/1/cards/5d64f19a7cd71013a9a418cf/attachments/5df37e7dc660f72ec2a6b147/previews/5df37e7ec660f72ec2a6b14f/download/placeholder.jpg';
-const kAppLogo = "assets/images/app_icon_transparent.png";
+// The Hub Market logo (DEV15): the client's website logo, made transparent.
+const kAppLogo = "assets/images/hub_market_logo.png";
 const kAppName = "ME Hub Market";

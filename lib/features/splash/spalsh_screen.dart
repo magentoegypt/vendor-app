@@ -97,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen> {
           children: <Widget>[
             _getVideoBackground(),
              Image(
-              image: const AssetImage('assets/images/ic_splash.png'),
+              image: const AssetImage('assets/images/splash.jpg'),
                fit:BoxFit.cover,
               width: MediaQuery.of(context).size.width,
               height: MediaQuery.of(context).size.height,

@@ -286,11 +286,12 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                         ),
                       ),
                       Center(
+                        // The Hub Market logo is about 2.5 times wider than tall.
                         child: FluxImage(
                           imageUrl: kAppLogo,
                           fit: BoxFit.contain,
-                          width: size.width / 2,
-                          height: size.height / 3,
+                          width: size.width * 0.6,
+                          height: size.width * 0.3,
                         ),
                       ),
                       const SizedBox(height: 5.0),

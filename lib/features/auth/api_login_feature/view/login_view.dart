@@ -176,11 +176,12 @@ class _SignInViewState extends State<SignInView> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const SizedBox(height: 20),
+                    // The Hub Market logo is about 2.5 times wider than tall.
                     FluxImage(
                       imageUrl: kAppLogo,
                       fit: BoxFit.contain,
-                      width: size.width / 2,
-                      height: size.height / 4,
+                      width: size.width * 0.6,
+                      height: size.width * 0.3,
                     ),
                     const SizedBox(height: 10),
                     Text(
