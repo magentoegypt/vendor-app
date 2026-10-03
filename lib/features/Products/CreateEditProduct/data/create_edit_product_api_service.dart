@@ -11,6 +11,7 @@ import '../../../../core/helper/api_url_helpers.dart';
 import '../../../../core/values/string_values.dart';
 import 'ProductAttributeModel.dart';
 import 'ProductAttributeSetList.dart';
+import 'product_translations.dart';
 import 'package:multi_vendor/core/helper/session_token.dart';
 
 
@@ -328,6 +329,61 @@ class CreateEditProductApiService {
       rethrow;
     } catch (exception) {
       //await Sentry.captureException(exception, stackTrace: stackTrace);
+      throw HttpException(StringValues.server_error);
+    }
+  }
+
+  /// The product's text per store view; for a new product ([sku] empty), the
+  /// fields and store views it can have text for.
+  Future<ProductTranslations> getProductTranslations(String sku) async {
+    return _readTranslations(await _sendTranslations(sku));
+  }
+
+  /// Saves the store views' text ([translationChanges]). The reply is the
+  /// text now live: a change to a live product waits for the admin.
+  Future<ProductTranslations> saveProductTranslations(
+      String sku, List<Map<String, dynamic>> translations) async {
+    return _readTranslations(
+        await _sendTranslations(sku, body: {'translations': translations}));
+  }
+
+  ProductTranslations _readTranslations(dynamic responseBody) {
+    try {
+      return ProductTranslations.fromJson(responseBody as Map<String, dynamic>);
+    } catch (exception, stackTrace) {
+      printLog(
+        classFileName: runtimeType.toString(),
+        logType: LoggerType.e,
+        message: '$exception\n$stackTrace',
+      );
+      throw JsonDeserializationException(['$exception']);
+    }
+  }
+
+  /// GET, or PUT when there is a [body].
+  Future<dynamic> _sendTranslations(String sku, {Map<String, dynamic>? body}) async {
+    final url = vendorsProductTranslationsApi(sku);
+    try {
+      var token = await SessionToken.current();
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+        "Authorization":"Bearer ${token ?? ""}"
+      };
+      final response = body == null
+          ? await _httpClient.get(Uri.parse(url), headers: headers)
+          : await _httpClient.put(Uri.parse(url), headers: headers, body: json.encode(body));
+      return apiResponseHelper(
+        response: response,
+        className: runtimeType.toString(),
+        apiUrl: url,
+        requestValue: body == null ? '' : '$body',
+        token: token ?? '',
+      );
+    } on SocketException {
+      throw HttpException(StringValues.no_internet);
+    } on HttpException {
+      rethrow;
+    } catch (exception) {
       throw HttpException(StringValues.server_error);
     }
   }

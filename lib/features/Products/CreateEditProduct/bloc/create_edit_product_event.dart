@@ -32,12 +32,27 @@ class PerformProductAttributeSetList extends CreateEditProductEvent {
 class PerformSaveProduct extends CreateEditProductEvent {
   final Map<String, dynamic> requestValueMap;
   final bool isUpdate;
+  /// The store views' text that changed ([translationChanges]), saved once
+  /// the product is.
+  final List<Map<String, dynamic>> translations;
   const PerformSaveProduct({
     required this.requestValueMap,
     required  this.isUpdate,
+    this.translations = const [],
   });
   @override
-  List<Object> get props => [requestValueMap];
+  List<Object> get props => [requestValueMap, translations];
+}
+
+/// The product's text per store view; an empty SKU asks what a new product
+/// can have text for.
+class PerformProductTranslations extends CreateEditProductEvent {
+  final String productSku;
+  const PerformProductTranslations({
+    required this.productSku,
+  });
+  @override
+  List<Object> get props => [productSku];
 }
 
 class PerformSingleProduct extends CreateEditProductEvent {

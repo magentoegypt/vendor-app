@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:bloc/bloc.dart';
 import '../data/create_edit_product_repository.dart';
+import '../data/product_translations.dart';
 import 'create_edit_product_event.dart';
 import 'create_edit_product_state.dart';
 
@@ -16,6 +17,7 @@ class CreateEditProductBloc extends Bloc<CreateEditProductEvent, CreateEditProdu
     on<PerformSingleProduct>(_onPerformSingleProduct);
     on<PerformProductDeleteMedia>(_onPerformProductDeleteMedia);
     on<PerformProductCategories>(_onPerformProductCategories);
+    on<PerformProductTranslations>(_onPerformProductTranslations);
   }
 
   final CreateEditProductRepository repository;
@@ -42,7 +44,7 @@ class CreateEditProductBloc extends Bloc<CreateEditProductEvent, CreateEditProdu
     }
   }
 
-  void _onPerformSaveProduct(event, emit) async {
+  void _onPerformSaveProduct(PerformSaveProduct event, emit) async {
     try {
       // emit the loading state
       emit(ProductsLoading());
@@ -50,8 +52,28 @@ class CreateEditProductBloc extends Bloc<CreateEditProductEvent, CreateEditProdu
         requestValueMap: event.requestValueMap,
         isUpdate: event.isUpdate
       );
-      // emit RegisterLoaded State
-      emit(SaveProductLoaded(productListModel: productListModel));
+      // The store views' text goes once the product is saved, under its SKU:
+      // a new product has none before. The product stays saved if this fails.
+      ProductTranslations? translationsReply;
+      String? translationsError;
+      if (event.translations.isNotEmpty) {
+        final sku = productListModel.products?.firstOrNull?.sku ??
+            event.requestValueMap['product']?['sku']?.toString() ?? '';
+        try {
+          translationsReply = await repository.requestSaveProductTranslations(
+            productSku: sku,
+            translations: event.translations,
+          );
+        } on Exception catch (e) {
+          translationsError = e.toString();
+        }
+      }
+      emit(SaveProductLoaded(
+        productListModel: productListModel,
+        translationsSent: event.translations,
+        translationsReply: translationsReply,
+        translationsError: translationsError,
+      ));
     } on Exception catch (e) {
       emit(ProductsError(errorMessage: e.toString()));
     }
@@ -81,6 +103,19 @@ class CreateEditProductBloc extends Bloc<CreateEditProductEvent, CreateEditProdu
       // emit RegisterLoaded State
     } on Exception catch (e) {
       emit(ProductsError(errorMessage: e.toString()));
+    }
+  }
+
+  void _onPerformProductTranslations(PerformProductTranslations event, emit) async {
+    try {
+      final translations = await repository.requestProductTranslations(
+        productSku: event.productSku,
+      );
+      emit(ProductTranslationsLoaded(translations: translations));
+    } on Exception {
+      // No translations API on the server yet, or the call failed: the form
+      // edits one text per field, as before, rather than show an error.
+      emit(ProductTranslationsLoaded(translations: null));
     }
   }
 

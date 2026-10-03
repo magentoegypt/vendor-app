@@ -31,6 +31,7 @@ import '../bloc/create_edit_product_event.dart';
 import '../bloc/create_edit_product_state.dart';
 import '../data/ProductAttributeModel.dart';
 import '../data/ProductAttributeSetList.dart';
+import '../data/product_translations.dart';
 
 
 
@@ -105,6 +106,135 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
         () => TextEditingController(text: _displayValue(attribute)));
   }
 
+  /// The product's name and descriptions per store view, or null while they
+  /// load or when the server has none to give: the form then edits one text
+  /// per field, as before.
+  ProductTranslations? _translations;
+
+  /// What the form holds for each translated store view: store code, then
+  /// attribute code, then text.
+  final Map<String, Map<String, String>> _typedTranslations = {};
+
+  static const _rtlLanguages = {'ar', 'fa', 'he', 'ur'};
+
+  /// Keys a store view's field among the attributes': "name@ar".
+  String _storeKey(String code, String store) => '$code@$store';
+
+  TextEditingController _storeController(String code, StoreTranslation store) {
+    return _controllers.putIfAbsent(_storeKey(code, store.code),
+        () => TextEditingController(text: _typedTranslations[store.code]?[code] ?? ''));
+  }
+
+  bool _isTranslated(ProductAttributeModel attribute) =>
+      (_translations?.stores.isNotEmpty ?? false) &&
+      _translations!.defaults.containsKey(attribute.attributeCode);
+
+  /// The field's label. A field with a text per store view names its
+  /// language: the form's own field holds the store-wide text, which the
+  /// English store shows.
+  String _labelFor(ProductAttributeModel attribute) {
+    final label = attribute.defaultFrontendLabel ?? "";
+    return _isTranslated(attribute) ? "$label (${AppLocalizations.of(context)!.english})" : label;
+  }
+
+  String _languageName(StoreTranslation store) {
+    final texts = AppLocalizations.of(context)!;
+    switch (store.languageCode) {
+      case 'ar':
+        return texts.arabic;
+      case 'en':
+        return texts.english;
+    }
+    return store.name ?? store.code;
+  }
+
+  /// "Product Name (Arabic)".
+  String _translatedLabel(String code, String storeCode) {
+    final store = _translations?.stores.where((s) => s.code == storeCode).firstOrNull;
+    final label = list.where((a) => a.attributeCode == code).firstOrNull?.defaultFrontendLabel ?? code;
+    return store == null ? label : "$label (${_languageName(store)})";
+  }
+
+  /// [field], then a field for its text in each translated store view, e.g.
+  /// "Product Name (Arabic)", written in that language's direction.
+  Widget _withTranslations(ProductAttributeModel attribute, Widget field) {
+    if (!_isTranslated(attribute)) return field;
+    final code = attribute.attributeCode ?? '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        field,
+        for (final store in _translations!.stores)
+          EditProductInfoWidget(
+            key: _fieldKey(_storeKey(code, store.code)),
+            errorText: _errorCode == _storeKey(code, store.code) ? _errorText : null,
+            controller: _storeController(code, store),
+            label: _translatedLabel(code, store.code),
+            onChanged: (val) {
+              (_typedTranslations[store.code] ??= {})[code] = val;
+              _clearFieldError(_storeKey(code, store.code));
+            },
+            isMultiline: attribute.frontendInput == "textarea",
+            keyboardType: TextInputType.multiline,
+            textDirection: _rtlLanguages.contains(store.languageCode)
+                ? TextDirection.rtl
+                : TextDirection.ltr,
+          ),
+      ],
+    );
+  }
+
+  /// The store views' text that changed, sent once the product is saved.
+  List<Map<String, dynamic>> _translationChanges() => _translations == null
+      ? const []
+      : translationChanges(_translations!, _typedTranslations);
+
+  /// Puts the store-wide name and descriptions in their fields.
+  void _showDefaultTexts() {
+    for (final attribute in list) {
+      final code = attribute.attributeCode;
+      if (_translations?.defaults.containsKey(code) ?? false) {
+        attribute.value = _translations!.defaults[code];
+        _controllers[code ?? '']?.text = _displayValue(attribute);
+      }
+    }
+  }
+
+  /// Fills the store views' fields from what the server sent.
+  void _useTranslations(ProductTranslations? translations) {
+    _translations = translations;
+    _typedTranslations.clear();
+    for (final store in translations?.stores ?? const <StoreTranslation>[]) {
+      final texts = _typedTranslations[store.code] = {
+        for (final code in translations!.attributeCodes) code: store.values[code] ?? '',
+      };
+      texts.forEach((code, text) => _controllers[_storeKey(code, store.code)]?.text = text);
+    }
+  }
+
+  /// The form edits the store-wide name and descriptions, which the save
+  /// writes. The product is read in the app's language, so in Arabic it came
+  /// with the Arabic name, and saving an edit to it replaced the English one
+  /// while the Arabic store kept the old name.
+  void _useDefaultTexts() {
+    final product = productItem;
+    final defaults = _translations?.defaults;
+    if (product == null || defaults == null) return;
+    defaults.forEach((code, value) {
+      if (code == 'name') {
+        product.name = value;
+        return;
+      }
+      final attributes = product.customAttributes ??= [];
+      final attribute = attributes.where((a) => a.attributeCode == code).firstOrNull;
+      if (attribute != null) {
+        attribute.value = value;
+      } else if (value != null) {
+        attributes.add(CustomAttributes(attributeCode: code, value: value));
+      }
+    });
+  }
+
   /// Pushes model values into the text fields after data is (re)loaded.
   void _syncControllers() {
     for (final attribute in list) {
@@ -172,8 +302,8 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
   }
 
   /// Errors with no field to mark. Not a toast: it covered the Save button.
-  void _showErrorDialog(String message) {
-    showDialog<void>(
+  Future<void> _showErrorDialog(String message) {
+    return showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         content: Text(message),
@@ -231,19 +361,22 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
   /// the edit is approved.
   bool _isLive() => productItem?.approval == _approved;
 
-  /// Changes named as the form labels them, e.g. "Product Name, Price".
-  String _fieldLabels(List<String> codes) {
+  /// Changes named as the form labels them, e.g. "Product Name", "Price".
+  List<String> _fieldNames(List<String> codes) {
     final texts = AppLocalizations.of(context)!;
-    final names = codes.map((code) {
+    return codes.map((code) {
       if (code == 'media_gallery_entries') return texts.imageGallery;
       if (code == 'category_ids') return texts.categoriesProduct;
       for (final attribute in list) {
         if (attribute.attributeCode == code) return attribute.defaultFrontendLabel ?? code;
       }
       return code;
-    });
-    return names.join(Localizations.localeOf(context).languageCode == 'ar' ? '، ' : ', ');
+    }).toList();
   }
+
+  /// "Product Name, Price".
+  String _joinNames(List<String> names) =>
+      names.join(Localizations.localeOf(context).languageCode == 'ar' ? '، ' : ', ');
 
   /// Shows the attribute set in use. The dropdown showed the first set
   /// ("333") whatever the form, and the saved product, used.
@@ -275,6 +408,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
     }else {
       context.read<CreateEditProductBloc>().add(const PerformProductCategories());
     }
+    context.read<CreateEditProductBloc>().add(PerformProductTranslations(productSku: widget.productSku));
    // treeListData = initialTreeData;
   }
 
@@ -547,12 +681,28 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                     final waiting = productItem != null && _sentProduct != null && (saved?.isNotEmpty ?? false)
                         ? changesAwaitingApproval(changedFields: _changedFields, sent: _sentProduct!, reply: saved!.first.toJson())
                         : null;
-                    if (waiting?.isNotEmpty ?? _sentForReview) {
+                    // A store view's text waits the same way: the reply still
+                    // shows the old text, e.g. "Product Name (Arabic)".
+                    final waitingTexts = state.translationsReply == null
+                        ? const <({String store, String code})>[]
+                        : translationsAwaitingApproval(state.translationsSent, state.translationsReply!);
+                    final waitingNames = [
+                      ..._fieldNames(waiting ?? const []),
+                      for (final text in waitingTexts) _translatedLabel(text.code, text.store),
+                    ];
+                    // The reply could not be read, but the edit went to review.
+                    final unknown = waiting == null && _sentForReview;
+                    if (state.translationsError != null) {
+                      // The product is saved and the form closes: say what was not.
+                      await _showErrorDialog(AppLocalizations.of(context)!.translationsNotSaved(state.translationsError!));
+                      if (!context.mounted) return;
+                    }
+                    if (unknown || waitingNames.isNotEmpty) {
                       // The edit waits for the admin, and the store hides the
                       // product meanwhile: say what waits before going back.
-                      final message = waiting == null
+                      final message = unknown
                           ? AppLocalizations.of(context)!.pendingUpdateNotice
-                          : AppLocalizations.of(context)!.pendingUpdateFields(_fieldLabels(waiting));
+                          : AppLocalizations.of(context)!.pendingUpdateFields(_joinNames(waitingNames));
                       await showDialog<void>(
                         context: context,
                         builder: (dialogContext) => AlertDialog(
@@ -566,7 +716,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                         ),
                       );
                       if (!context.mounted) return;
-                    } else if (productItem != null) {
+                    } else if (productItem != null && state.translationsError == null) {
                       // Saved as it stands, e.g. enabled, disabled or restocked.
                       Tools.showSnackBar(ScaffoldMessenger.of(context),
                           AppLocalizations.of(context)!.productSaved);
@@ -583,6 +733,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                         }
                       });
                       _savedCategoryIds = category_ids.map((id) => '$id').toList();
+                      _useDefaultTexts();
                       setData();
                       context.read<CreateEditProductBloc>().add(const PerformProductCategories());
                       // Open the product in its own attribute set: the form always
@@ -590,6 +741,15 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                       final setId = productItem?.attributeSetId;
                       if (setId != null && setId != attributeSetId) {
                         _useAttributeSet(setId);
+                      }
+                    });
+                  }else if (state is ProductTranslationsLoaded) {
+                    setState(() {
+                      _useTranslations(state.translations);
+                      // A new product has no texts yet: keep what was typed.
+                      if (productItem != null) {
+                        _useDefaultTexts();
+                        _showDefaultTexts();
                       }
                     });
                   }
@@ -692,26 +852,28 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                     // The SKU identifies the product in Magento's API, so it
                                     // is editable when creating but fixed once saved.
                                     final enable = attribute.attributeCode != "sku" || widget.productSku.isEmpty;
-                                  return EditProductInfoWidget(
+                                  return _withTranslations(attribute, EditProductInfoWidget(
                                     key: _fieldKey(attribute.attributeCode),
                                     errorText: _errorFor(attribute),
                                     controller: _controllerFor(attribute),
-                                  label: attribute.defaultFrontendLabel ?? "",
+                                  label: _labelFor(attribute),
                                   onChanged: (val) => _onFieldChanged(attribute, val),
                                   keyboardType: TextInputType.multiline,
                                     enable: enable,
-                                  );
+                                    textDirection: _isTranslated(attribute) ? TextDirection.ltr : null,
+                                  ));
                                 case "textarea":
                                   final attribute = list[index];
-                                  return EditProductInfoWidget(
+                                  return _withTranslations(attribute, EditProductInfoWidget(
                                     key: _fieldKey(attribute.attributeCode),
                                     errorText: _errorFor(attribute),
                                     controller: _controllerFor(attribute),
-                                    label: attribute.defaultFrontendLabel ?? "",
+                                    label: _labelFor(attribute),
                                     onChanged: (val) => _onFieldChanged(attribute, val),
                                     isMultiline: true,
                                     keyboardType: TextInputType.multiline,
-                                  );
+                                    textDirection: _isTranslated(attribute) ? TextDirection.ltr : null,
+                                  ));
                                 case "price" || "weight":
                                   final attribute = list[index];
                                   return EditProductInfoWidget(
@@ -972,6 +1134,13 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                   }
                                 }
                               }
+                              // The server keeps names up to 255 characters, in every language.
+                              for (final store in _translations?.stores ?? const <StoreTranslation>[]) {
+                                if ((translationText(_typedTranslations[store.code]?['name'])?.runes.length ?? 0) > 255) {
+                                  _showFieldError(_storeKey('name', store.code), AppLocalizations.of(context)!.productNameTooLong);
+                                  return;
+                                }
+                              }
                               for (int index = 0; index < galleryproductAttributeModel.galleryImages.length; index++) {
                                 if(galleryproductAttributeModel.galleryImages[index]  is String){
                                   productItem?.mediaGalleryEntries?.forEach((_element){
@@ -1063,7 +1232,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                 data["attributes"] = attributes;
                                 data["product"] = product;
                                 print(json.encode(data));
-                                context.read<CreateEditProductBloc>().add(PerformSaveProduct(requestValueMap: data,isUpdate:true));
+                                context.read<CreateEditProductBloc>().add(PerformSaveProduct(requestValueMap: data,isUpdate:true, translations: _translationChanges()));
                               }else{
                                 custom_attributes['url_key'] = productUrlKey(product['name']?.toString(), product['sku']?.toString());
                                 List<Map<String, dynamic>> listcustomAttributes = [];
@@ -1075,7 +1244,7 @@ class _CreateEditProductViewState extends State<CreateEditProductWidget> {
                                 });
                                 product["custom_attributes"] = listcustomAttributes;//custom_attributes;
                                 data["product"] = product;
-                                context.read<CreateEditProductBloc>().add(PerformSaveProduct(requestValueMap: data,isUpdate:false));
+                                context.read<CreateEditProductBloc>().add(PerformSaveProduct(requestValueMap: data,isUpdate:false, translations: _translationChanges()));
                               }
                             },
                             child: Container(

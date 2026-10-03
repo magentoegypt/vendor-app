@@ -24,6 +24,11 @@ String get vendorsProductCategoriesApi => '$apiBaseUrl/rest/$selectedLanguage/V1
 String get vendorsProductAttributeApi => '$apiBaseUrl/rest/$selectedLanguage/V1/products/attribute-sets/';
 String get vendorsProductAttributeSetListApi => '$apiBaseUrl/rest/$selectedLanguage/V1/products/attribute-sets/sets/list/?';
  String vendorsSaveProductsApi = '$apiBaseUrl/rest/V1/vendors/product/save';
+// A seller product's text per store view (GET and PUT). Without a SKU: the
+// fields and store views a new product can have text for.
+String vendorsProductTranslationsApi(String sku) => sku.isEmpty
+    ? '$apiBaseUrl/rest/V1/vendors/product/translations'
+    : '$apiBaseUrl/rest/V1/vendors/product/${sku.replaceAll(" ", "%20")}/translations';
 String get vendorsSingleProductsApi => '$apiBaseUrl/rest/$selectedLanguage/V1/products/';
 String get vendorsSingleProductQuantityApi => '$apiBaseUrl/rest/$selectedLanguage/V1/vendors/me/stockItems/';
 String get vendorsProductDeleteMediaApi => '$apiBaseUrl/rest/$selectedLanguage/V1/vendors/product/';

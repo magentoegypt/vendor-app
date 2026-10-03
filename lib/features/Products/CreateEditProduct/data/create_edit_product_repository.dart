@@ -7,6 +7,7 @@ import 'package:multi_vendor/features/Products/ProductList/data/productListModel
 import 'ProductAttributeSetList.dart';
 import 'create_edit_product_api_service.dart';
 import 'ProductAttributeModel.dart';
+import 'product_translations.dart';
 
 class CreateEditProductRepositoryException implements Exception {}
 
@@ -75,6 +76,27 @@ class CreateEditProductRepository {
   Future<List<Map<String, dynamic>>> requestProductCategories() async {
     try {
       return _service.getProductCategories();
+    } on Exception {
+      throw CreateEditProductRepositoryException();
+    }
+  }
+
+  Future<ProductTranslations> requestProductTranslations({
+    required String productSku,
+  }) async {
+    try {
+      return _service.getProductTranslations(productSku);
+    } on Exception {
+      throw CreateEditProductRepositoryException();
+    }
+  }
+
+  Future<ProductTranslations> requestSaveProductTranslations({
+    required String productSku,
+    required List<Map<String, dynamic>> translations,
+  }) async {
+    try {
+      return _service.saveProductTranslations(productSku, translations);
     } on Exception {
       throw CreateEditProductRepositoryException();
     }

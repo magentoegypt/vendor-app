@@ -21,6 +21,8 @@ class EditProductInfoWidget extends StatelessWidget {
   final Color? backgroundColor;
   /// Shown under the field, which gets a red border.
   final String? errorText;
+  /// For text in a set language, e.g. Arabic right to left in the English app.
+  final TextDirection? textDirection;
 
   const EditProductInfoWidget({
     super.key,
@@ -39,6 +41,7 @@ class EditProductInfoWidget extends StatelessWidget {
     this.focusNode,
     this.backgroundColor,
     this.errorText,
+    this.textDirection,
   });
   @override
   Widget build(BuildContext context) {
@@ -106,6 +109,7 @@ class EditProductInfoWidget extends StatelessWidget {
             keyboardType: keyboardType,
             inputFormatters: inputFormatters,
             enabled: enable,
+            textDirection: textDirection,
           ),
         ),
         if (errorText != null)

@@ -1161,6 +1161,8 @@
 	 "pendingNewNotice":"This product is waiting for admin approval before it appears in the store.",
 	 "serverError":"Something went wrong while contacting the server. Please try again.",
 	 "productSaved":"Product saved.",
+	 "translationsNotSaved":"The product was saved, but not its translations: {error}",
+	 "@translationsNotSaved": {"placeholders": {"error": {"type": "String"}}},
 	 "downloadable":"Downloadable",
 	 "configurable":"Configurable",
 	 "bundle":"Bundle"
