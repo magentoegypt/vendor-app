@@ -95,6 +95,8 @@ class _ForgotPasswordViewState extends State<ForgotPasswordView> {
 
                 if (state is SendMobileOTPLoaded) {
                   if(state.mobileOTPModel.status == "success"){
+                    // "OTP sent successfully. Please check your WhatsApp."
+                    Tools.showSnackBar(ScaffoldMessenger.of(context), state.mobileOTPModel.message);
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => ResetPasswordView(phoneNumber: '${countryCode?.dialCode?.replaceAll("+", "")}${_emailController.text.trim()}',)),

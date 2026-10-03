@@ -3,9 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:multi_vendor/core/config/locator.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 
-import '../core/config/tools.dart';
 
-
+/// Where the code went. Codes come by WhatsApp only, and the screen said only
+/// "Enter the code sent to +20…", so QA waited for an SMS that never comes
+/// (TC76).
+Widget codeSentNote(BuildContext context, String phoneNumber) {
+  // Isolated, so that the number reads +20… inside an Arabic sentence.
+  final phone = '\u2066+${phoneNumber.replaceAll('+', '')}\u2069';
+  return Text(
+    AppLocalizations.of(context)!.codeSentToWhatsApp(phone),
+    textAlign: TextAlign.center,
+    style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 15),
+  );
+}
 
 class OtpDialog  {
 
@@ -33,34 +43,7 @@ class OtpDialog  {
               Padding(
                 padding:
                 const EdgeInsets.symmetric(horizontal: 0.0, vertical: 4),
-                child: Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: RichText(
-                    text: TextSpan(
-                      text: AppLocalizations.of(context)!.enterSendedCode,
-                      children: [
-                        TextSpan(
-                          text: Tools.isRTL(context)
-                              ? ' ${phoneNumber.replaceAll('+', '')}+'
-                              : ' +${phoneNumber.replaceAll('+', '')}',
-                          style:
-                          Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            fontSize: 15,
-                          ),
-                        ),
-                      ],
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.color
-                            ?.withOpacity(0.54),
-                        fontSize: 15,
-                      ),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+                child: codeSentNote(context, phoneNumber),
               ),
               const SizedBox(height: 20),
               Padding(
@@ -92,6 +75,9 @@ class OtpDialog  {
                     hapticFeedbackTypes: HapticFeedbackTypes.light,
                     useHapticFeedback: true,
                     autoDisposeControllers: false,
+                    // The code comes by WhatsApp: the keyboard's "Autofill code
+                    // from Messages" never fills it and points to SMS.
+                    enablePinAutofill: false,
                     animationDuration: const Duration(milliseconds: 300),
                     onChanged: (value) {
                       //  if (value.length == 6) _loginSMS(value, context);

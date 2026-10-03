@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import '../../../../common/PasswordController.dart';
+import '../../../../common/otp_dialog.dart';
 import '../../../../core/config/pref_keys.dart';
 import '../../../../common/edit_product_info_widget.dart';
 import '../../../../common/flux_image.dart';
@@ -114,34 +115,7 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                     Padding(
                       padding:
                       const EdgeInsets.symmetric(vertical: 4),
-                      child: Directionality(
-                        textDirection: TextDirection.rtl,
-                        child: RichText(
-                          text: TextSpan(
-                            text: AppLocalizations.of(context)!.enterSendedCode,
-                            children: [
-                              TextSpan(
-                                text: Tools.isRTL(context)
-                                    ? ' ${widget.phoneNumber.replaceAll('+', '')}+'
-                                    : ' +${widget.phoneNumber.replaceAll('+', '')}',
-                                style:
-                                Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                  fontSize: 15,
-                                ),
-                              ),
-                            ],
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.color
-                                  ?.withOpacity(0.54),
-                              fontSize: 15,
-                            ),
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
+                      child: codeSentNote(context, widget.phoneNumber),
                     ),
                     const SizedBox(
                       height: 20.0,
@@ -172,6 +146,8 @@ class _ResetPasswordViewState extends State<ResetPasswordView> {
                         hapticFeedbackTypes: HapticFeedbackTypes.light,
                         useHapticFeedback: true,
                         autoDisposeControllers: false,
+                        // The code comes by WhatsApp, not SMS (TC76).
+                        enablePinAutofill: false,
                         animationDuration: const Duration(milliseconds: 300),
                         onChanged: (value) {
                           //  if (value.length == 6) _loginSMS(value, context);

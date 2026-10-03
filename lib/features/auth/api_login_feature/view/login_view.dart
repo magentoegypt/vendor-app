@@ -113,6 +113,9 @@ class _SignInViewState extends State<SignInView> {
                           (e) => false);
                 }else if (state is SendMobileOTPLoaded) {
                   if(state.mobileOTPModel.status == "success"){
+                    // "OTP sent successfully. Please check your WhatsApp.", also
+                    // after Resend, which showed nothing while the code dialog was open.
+                    Tools.showSnackBar(ScaffoldMessenger.of(context), state.mobileOTPModel.message);
                     if(!OtpDialog.isDialogOpen){
                       OtpDialog.showOtpDialog(context, "${countryCode?.dialCode?.replaceAll("+", "")}${_emailController.text.trim()}",((otpCode,actionFrom){
                         if(actionFrom == "resend"){

@@ -1116,6 +1116,8 @@
 	"resetForgotPassword":"Reset Password",
 	"resetYourPassword":"Reset Your Password",
 	 "enterSendedCode":"Enter the code sent to",
+	 "codeSentToWhatsApp":"We sent a 6-digit code to your WhatsApp at {phone}.",
+	 "@codeSentToWhatsApp": {"placeholders": {"phone": {"type": "String"}}},
 	 "passwordNotMatch": "Password and confirm password is not same.",
 	 "profileupdatedSuccessful":"Profile updated Successful",
 	 "orderAccountInformation":"Order & Account Information",

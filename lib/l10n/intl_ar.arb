@@ -1116,6 +1116,7 @@
     "resetPassword":"نسيت كلمة المرور",
     "resetYourPassword":"اعد ضبط كلمه السر",
     "enterSendedCode":"أدخل الرمز المرسل إليه",
+    "codeSentToWhatsApp":"أرسلنا رمزًا من 6 أرقام إلى واتساب على {phone}.",
     "passwordNotMatch": "كلمة المرور غير متطابقة",
     "profileupdatedSuccessful":"تم تحديث الملف الشخصي بنجاح",
     "orderAccountInformation":"معلومات الطلب والحساب",
