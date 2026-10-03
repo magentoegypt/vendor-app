@@ -1,8 +1,9 @@
-/// A product's text in each store view: its name, short and long description.
+/// A product's text in each store view: its name, descriptions and meta text.
 ///
-/// [defaults] are the store-wide values (store 0). The main form edits them,
-/// and the English store shows them. Each of [stores] (the Arabic store view)
-/// has its own values, null where it shows the default.
+/// [stores] are the store views the seller edits, English (`en`) then Arabic
+/// (`ar`), each with its own values, null where it shows the store-wide
+/// text, [defaults] (store 0). The catalogue keeps either language
+/// store-wide: English for some products, Arabic for the Egyptian ones.
 ///
 /// From GET /V1/vendors/product/:sku/translations. Without a SKU, for a new
 /// product, the same fields and store views come with every value null.
@@ -14,6 +15,9 @@ class ProductTranslations {
 
   /// The fields that have a text per store view.
   Iterable<String> get attributeCodes => defaults.keys;
+
+  /// The text [store] shows for [code]: its own, else the store-wide one.
+  String? textIn(StoreTranslation store, String code) => store.values[code] ?? defaults[code];
 
   factory ProductTranslations.fromJson(Map<String, dynamic> json) {
     return ProductTranslations(
@@ -61,16 +65,17 @@ Map<String, String?> _values(dynamic entries) => {
     };
 
 /// A text as compared and sent: trimmed, and null when empty. For a store
-/// view, null means it has no text of its own and shows the default.
+/// view, null means it has no text of its own and shows the store-wide one.
 String? translationText(String? value) {
   final text = value?.trim() ?? '';
   return text.isEmpty ? null : text;
 }
 
 /// The PUT body's `translations`: per store view, the fields whose text the
-/// vendor changed from [loaded]. [typed] holds the form's text by store code,
-/// then by attribute code. An emptied field goes as null, which drops the
-/// store's own text so that it shows the default again.
+/// vendor changed from what the store showed in [loaded]. [typed] holds the
+/// form's text by store code, then by attribute code. An emptied field goes
+/// as null, which drops the store's own text so that it shows the store-wide
+/// one again.
 List<Map<String, dynamic>> translationChanges(
     ProductTranslations loaded, Map<String, Map<String, String>> typed) {
   final changes = <Map<String, dynamic>>[];
@@ -78,7 +83,7 @@ List<Map<String, dynamic>> translationChanges(
     final values = [
       for (final code in loaded.attributeCodes)
         if (typed[store.code]?.containsKey(code) ?? false)
-          if (translationText(typed[store.code]![code]) != translationText(store.values[code]))
+          if (translationText(typed[store.code]![code]) != translationText(loaded.textIn(store, code)))
             {'attribute_code': code, 'value': translationText(typed[store.code]![code])},
     ];
     if (values.isNotEmpty) {
