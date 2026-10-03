@@ -195,9 +195,11 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   _buildSectionHeader(AppLocalizations.of(context)!.orderTotal),
-                                  _buildOrderTotalRow(AppLocalizations.of(context)!.subtotal, getStringWithCurrencyCode(orderModel?.baseSubtotal, base: true)),
-                                  if ((orderModel?.baseDiscountAmount ?? 0) != 0)
-                                    _buildOrderTotalRow(AppLocalizations.of(context)!.discount, getStringWithCurrencyCode(orderModel?.baseDiscountAmount, base: true)),
+                                  // A special price counts as a discount, as on the admin's
+                                  // and the seller panel's order page (TC89).
+                                  _buildOrderTotalRow(AppLocalizations.of(context)!.subtotal, getStringWithCurrencyCode(orderModel?.shownBaseSubtotal, base: true)),
+                                  if ((orderModel?.shownBaseDiscount ?? 0) != 0)
+                                    _buildOrderTotalRow(AppLocalizations.of(context)!.discount, getStringWithCurrencyCode(orderModel?.shownBaseDiscount, base: true)),
                                   _buildOrderTotalRow(AppLocalizations.of(context)!.shippingHandling, getStringWithCurrencyCode(orderModel?.baseShippingAmount, base: true)),
                                   // Without it the totals did not add up: 500 + 0 shown as 550.
                                   _buildOrderTotalRow(AppLocalizations.of(context)!.tax, getStringWithCurrencyCode(orderModel?.baseTaxAmount, base: true)),
@@ -356,7 +358,7 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
           _buildRow(AppLocalizations.of(context)!.subtotal, getStringWithCurrencyCode(item.rowTotal)),
           _buildRow(AppLocalizations.of(context)!.taxAmount, getStringWithCurrencyCode(item.taxAmount)),
           _buildRow(AppLocalizations.of(context)!.taxPercent, '${Tools.formatQty(item.taxPercent ?? 0)}%'),
-          _buildRow(AppLocalizations.of(context)!.discountAmount, getStringWithCurrencyCode(item.discountAmount)),
+          _buildRow(AppLocalizations.of(context)!.discountAmount, getStringWithCurrencyCode(item.shownDiscount)),
           _buildRow(AppLocalizations.of(context)!.rowTotal, getStringWithCurrencyCode(item.rowTotalWithTax)),
           Container(
             margin: EdgeInsets.symmetric(vertical: 7.0),

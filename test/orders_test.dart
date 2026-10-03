@@ -64,6 +64,80 @@ void main() {
     });
   });
 
+  group('A special price is shown as a discount (TC89, 14zb93nvw6m)', () {
+    // Order 3000000181: test61 at a special price of 2,000 instead of 4,000.
+    // The admin shows Discount Amount 2,000, Subtotal 4,000, Discount -2,000.
+    Map<String, dynamic> item({
+      num own = 4000,
+      num sold = 2000,
+      num qty = 1,
+      num discount = 0,
+      int? parent,
+    }) =>
+        {
+          'original_price': own,
+          'price': sold,
+          'base_original_price': own,
+          'base_price': sold,
+          'qty_ordered': qty,
+          'discount_amount': discount,
+          'row_total': sold * qty,
+          'tax_amount': sold * qty / 10,
+          if (parent != null) 'parent_item_id': parent,
+        };
+
+    details.OrderModel order(List<Map<String, dynamic>> items,
+            {num subtotal = 2000, num discount = 0}) =>
+        details.OrderModel.fromJson({
+          'base_subtotal': subtotal,
+          'base_discount_amount': discount,
+          'base_grand_total': 2200,
+          'items': items,
+        });
+
+    test("the item's Discount Amount includes the drop from its own price", () {
+      final sold = details.Items.fromJson(item());
+
+      expect(sold.shownDiscount, 2000);
+      // Row Total stays as sold: 2,000 plus 200 tax.
+      expect(sold.rowTotalWithTax, 2200);
+      expect(details.Items.fromJson(item(discount: 150)).shownDiscount, 2150);
+      expect(details.Items.fromJson(item(qty: 3)).shownDiscount, 6000);
+    });
+
+    test('the totals show the subtotal at the own prices and the discount', () {
+      final shown = order([item()]);
+
+      expect(shown.shownBaseSubtotal, 4000);
+      expect(shown.shownBaseDiscount, -2000);
+      expect(shown.baseGrandTotal, 2200);
+    });
+
+    test('a cart discount on top adds to it', () {
+      expect(order([item()], discount: -100).shownBaseDiscount, -2100);
+    });
+
+    test('without a special price nothing changes', () {
+      final plain = order([item(own: 2000)]);
+
+      expect(plain.shownBaseSubtotal, 2000);
+      expect(plain.shownBaseDiscount, 0);
+      expect(order([item(own: 2000)], discount: -50).shownBaseDiscount, -50);
+      expect(details.Items.fromJson(item(own: 2000)).shownDiscount, 0);
+    });
+
+    test("a configurable's child row counts no discount of its own", () {
+      final shown = order([
+        item(own: 300, sold: 300),
+        item(own: 250, sold: 0, parent: 1),
+      ], subtotal: 300);
+
+      expect(shown.shownBaseDiscount, 0);
+      expect(shown.shownBaseSubtotal, 300);
+      expect(details.Items.fromJson(item(own: 250, sold: 0, parent: 1)).shownDiscount, 0);
+    });
+  });
+
   group('Country names (14zb93nv64v item 5)', () {
     test('an address country code becomes the name in the app language', () async {
       final previous = selectedLanguage;

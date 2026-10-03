@@ -1,5 +1,9 @@
 import '../../../../core/utils/json_parser.dart';
 
+/// Below this, a price difference is rounding, not a discount (as on the
+/// admin's order page).
+const _priceDrop = 0.0001;
+
 class OrderModel {
   num? commission;
   int? entityId;
@@ -125,6 +129,31 @@ class OrderModel {
         this.canShip,
         this.canCreditMemo,
         this.incrementId});
+
+  /// The items with their own row: a configurable's child is in its parent's.
+  Iterable<Items> get _topItems =>
+      (items ?? const <Items>[]).where((item) => item.parentItemId == null);
+
+  /// The order's catalog discounts in base currency (TC89): products sold
+  /// below their own price, such as at a special price. Magento stores no
+  /// discount for them, but the admin and the seller panel show one.
+  num get baseCatalogDiscount =>
+      _topItems.fold<num>(0, (sum, item) => sum + item.baseCatalogDiscount);
+
+  /// Subtotal as the admin shows it: at the products' own prices when any
+  /// sold below them, so that Subtotal less Discount still adds up.
+  num? get shownBaseSubtotal => baseCatalogDiscount > _priceDrop
+      ? _topItems.fold<num>(
+          0,
+          (sum, item) =>
+              sum + (item.baseOriginalPrice ?? item.basePrice ?? 0) * (item.qtyOrdered ?? 0))
+      : baseSubtotal;
+
+  /// The Discount line: the cart discount (stored as a negative) and the
+  /// catalog discounts, or 0 when there are none.
+  num get shownBaseDiscount => baseCatalogDiscount > _priceDrop
+      ? -(baseDiscountAmount ?? 0).abs() - baseCatalogDiscount
+      : (baseDiscountAmount ?? 0);
 
   OrderModel.fromJson(Map<String, dynamic> json) {
     commission = JsonParser.toNum(json['commission']);
@@ -375,6 +404,8 @@ class Items {
   num? priceInclTax;
   int? productId;
   String? productType;
+  /// Set on a configurable's child row.
+  int? parentItemId;
   num? qtyCanceled;
   num? qtyInvoiced;
   num? qtyOrdered;
@@ -498,6 +529,7 @@ class Items {
     price = JsonParser.toNum(json['price']);
     priceInclTax = JsonParser.toNum(json['price_incl_tax']);
     productId = JsonParser.toInt(json['product_id']);
+    parentItemId = JsonParser.toInt(json['parent_item_id']);
     productType = JsonParser.toStr(json['product_type']);
     qtyCanceled = JsonParser.toNum(json['qty_canceled']);
     qtyInvoiced = JsonParser.toNum(json['qty_invoiced']);
@@ -601,6 +633,25 @@ class Items {
       (taxAmount ?? 0) +
       (discountTaxCompensationAmount ?? 0) -
       (discountAmount ?? 0);
+
+  /// How far below the product's own price the item sold, such as at a
+  /// special price, for every one ordered (TC89). Magento stores no discount
+  /// for it, but the admin and the seller panel add it to Discount Amount. A
+  /// configurable's child row has none: its parent shows it.
+  num get catalogDiscount => _catalogDiscount(originalPrice, price);
+
+  /// [catalogDiscount] in base currency.
+  num get baseCatalogDiscount => _catalogDiscount(baseOriginalPrice, basePrice);
+
+  num _catalogDiscount(num? own, num? sold) {
+    if (parentItemId != null || own == null || sold == null) return 0;
+    final drop = (own - sold) * (qtyOrdered ?? 0);
+    return drop > _priceDrop ? drop : 0;
+  }
+
+  /// Discount Amount as the admin shows it: any cart discount plus the
+  /// [catalogDiscount].
+  num get shownDiscount => (discountAmount ?? 0) + catalogDiscount;
 }
 
 class ExtensionAttributes {
