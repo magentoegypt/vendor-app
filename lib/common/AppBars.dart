@@ -2,6 +2,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../../core/config/locator.dart';
+import '../core/helper/session_token.dart';
 import '../features/auth/api_login_feature/view/login_view.dart';
 import '../main.dart';
 
@@ -70,8 +71,12 @@ class AppBars extends AppBar {
                 child: new Text(AppLocalizations.of(context)!.no),
               ),
               new TextButton(
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(context); // Closes the dialog
+                  // Signs this phone out: without its token the app opens on
+                  // login next time. It used to keep the token. Other phones
+                  // stay signed in.
+                  await SessionToken.clear();
                   Navigator.pushAndRemoveUntil(
                       navigatorKey.currentState!.context,
                       MaterialPageRoute(

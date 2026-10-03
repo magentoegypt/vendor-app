@@ -3,9 +3,8 @@ import 'package:http/http.dart' as http;
 import '../../core/config/extensions.dart';
 import '../config/app_exceptions.dart';
 import '../config/logger.dart';
-import '../config/pref_keys.dart';
 import '../values/string_values.dart';
-import 'shared_preferences_helpers.dart';
+import 'session_token.dart';
 
 /// Runs after an authenticated request is rejected with 401 and the stored
 /// session is cleared. main.dart points it at the login screen, which keeps
@@ -62,10 +61,7 @@ dynamic apiResponseHelper({
         // The stored token was rejected: end the session and let the app send
         // the vendor to login with a reason, instead of silently swapping
         // screens and handing the error body to the caller as data.
-        final prefs = SharedPreferencesHelpers();
-        await prefs.removeSingleKey(key: authTokenPrefKey);
-        await prefs.removeSingleKey(key: userPrefKey);
-        await prefs.setIntData(key: initScreenPrefKey, id: 0);
+        await SessionToken.clear();
         onSessionExpired?.call();
         throw SessionExpiredException();
       }

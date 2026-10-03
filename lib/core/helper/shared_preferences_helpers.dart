@@ -40,7 +40,7 @@ class SharedPreferencesHelpers {
 
   Future<void> removeSingleKey({required String key}) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.remove(key);
+    await prefs.remove(key);
   }
 
   Future<void> clearAllPref() async {

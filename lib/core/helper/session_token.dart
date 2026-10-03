@@ -36,6 +36,23 @@ class SessionToken {
         id: (now ?? DateTime.now()).millisecondsSinceEpoch);
   }
 
+  /// Whether a seller is signed in on this phone: a token is stored. Whether
+  /// it still works only the server can say; a refusal (401) ends the session.
+  static Future<bool> isSignedIn() async {
+    final token =
+        await SharedPreferencesHelpers().getStringData(key: authTokenPrefKey);
+    return token != null && token.isNotEmpty;
+  }
+
+  /// Ends the session on this phone: the token, when it was saved, and the
+  /// seller. Other phones stay signed in.
+  static Future<void> clear() async {
+    final prefs = SharedPreferencesHelpers();
+    await prefs.removeSingleKey(key: authTokenPrefKey);
+    await prefs.removeSingleKey(key: authTokenIssuedAtPrefKey);
+    await prefs.removeSingleKey(key: userPrefKey);
+  }
+
   /// The token to send, refreshed first once half of its life has passed.
   /// Its life runs from the JWT's "iat" (or else when the app saved it) to
   /// its "exp" (or else [defaultLifetime] after saving); a token with none

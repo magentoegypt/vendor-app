@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/config/locator.dart';
 import '../../core/config/pref_keys.dart';
+import '../../core/helper/session_token.dart';
 import '../../core/helper/shared_preferences_helpers.dart';
 import '../../main.dart';
 import '../auth/api_login_feature/view/login_view.dart';
@@ -20,10 +21,14 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  /// init Screen bool
   /// check if it is first time App is launched by user
-  int? initScreen;
   int? isFirstLaunch;
+
+  /// Whether a token is stored: the app opens on the Dashboard then, and the
+  /// server's refusal (401) opens login. It went by a separate saved flag that
+  /// opening the login screen reset, so on 10-03 a session the server still
+  /// accepted opened on Login without trying its token.
+  bool _signedIn = false;
 
   bool _visible = false;
   final SharedPreferencesHelpers _sharedPrefKeys = SharedPreferencesHelpers();
@@ -43,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen> {
       Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(
-            builder: (context) => initScreen == 0 || initScreen == null
+            builder: (context) => !_signedIn
                 ? isFirstLaunch == 0 || isFirstLaunch == null ? const LanguageScreen():const SignInView()
                 : const DashboardWidget(),
           ),
@@ -52,15 +57,13 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void getIsOnboarding() async {
-    /// Setting an Int value for initScreen
-    /// To show the Intro Screens at Start
-    initScreen = await _sharedPrefKeys.getIntData(key: initScreenPrefKey);
+    _signedIn = await SessionToken.isSignedIn();
     isFirstLaunch = await _sharedPrefKeys.getIntData(key: isFirstLaunchPrefKey);
   }
 
   // Navigate Away to Next Screen
   void navigateAwayFromSplash() async {
-    if (initScreen == 0 || initScreen == null) {
+    if (!_signedIn) {
     } else {}
   }
 
@@ -125,7 +128,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => initScreen == 0 || initScreen == null
+                      builder: (context) => !_signedIn
                           ? const SignInView()
                           : const DashboardWidget(),
                     ),
@@ -141,7 +144,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => initScreen == 0 || initScreen == null
+                      builder: (context) => !_signedIn
                           ? const SignInView()
                           : const DashboardWidget(),
                     ),

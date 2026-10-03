@@ -10,6 +10,7 @@ import '../../../../core/config/extensions.dart';
 import '../../../../common/custom_text_field.dart';
 import '../../../../common/app_logo.dart';
 import '../../../../core/config/app_constants.dart';
+import '../../../../core/helper/session_token.dart';
 import '../../../../core/config/colors.dart';
 import '../../../../core/config/locator.dart';
 import '../../../../core/config/tools.dart';
@@ -250,6 +251,9 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                 }else if (state is DeleteVendorLoaded) {
                     if(state.isDelete){
                       Tools.showSnackBar(ScaffoldMessenger.of(context), AppLocalizations.of(context)!.deleteAccountSuccess);
+                      // The account is gone: so is its session on this phone.
+                      await SessionToken.clear();
+                      if (!context.mounted) return;
                       Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
