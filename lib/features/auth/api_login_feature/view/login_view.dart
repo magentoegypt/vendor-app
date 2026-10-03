@@ -7,7 +7,7 @@ import '../../../../common/ToggleButton.dart';
 import '../../../../common/otp_dialog.dart';
 import '../../../../core/config/pref_keys.dart';
 import '../../../../common/edit_product_info_widget.dart';
-import '../../../../common/flux_image.dart';
+import '../../../../common/app_logo.dart';
 import '../../../../core/config/app_constants.dart';
 import '../../../../core/config/locator.dart';
 import '../../../../core/config/tools.dart';
@@ -78,7 +78,6 @@ class _SignInViewState extends State<SignInView> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
     return Scaffold(
       body:SafeArea(
         child: GestureDetector(
@@ -176,22 +175,19 @@ class _SignInViewState extends State<SignInView> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     const SizedBox(height: 20),
-                    // The Hub Market logo is about 2.5 times wider than tall.
-                    FluxImage(
-                      imageUrl: kAppLogo,
-                      fit: BoxFit.contain,
-                      width: size.width * 0.6,
-                      height: size.width * 0.3,
-                    ),
+                    const AppLogo(),
                     const SizedBox(height: 10),
+                    // Smaller with the logo, as in QA's example (DEV15).
                     Text(
                       kAppName,
                       style: const TextStyle(
-                        fontSize: 30.0,
+                        fontSize: 20.0,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 15),
+                    // 12 more than before, the height the title gave up, so
+                    // the tabs and the form stay where they were.
+                    const SizedBox(height: 27),
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: ToggleButton(

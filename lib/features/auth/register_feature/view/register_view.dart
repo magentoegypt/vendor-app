@@ -5,7 +5,7 @@ import '../../../../common/edit_product_info_widget.dart';
 import '../../../../common/otp_dialog.dart';
 import '../../../../core/config/extensions.dart';
 import '../../../../common/custom_text_field.dart';
-import '../../../../common/flux_image.dart';
+import '../../../../common/app_logo.dart';
 import '../../../../core/config/app_constants.dart';
 import '../../../../core/config/colors.dart';
 import '../../../../core/config/locator.dart';
@@ -126,7 +126,6 @@ class _RegisterViewState extends State<RegisterView> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
     return Scaffold(
       body: SafeArea(
         child: GestureDetector(
@@ -215,15 +214,7 @@ class _RegisterViewState extends State<RegisterView> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
                       const SizedBox(height: 5.0),
-                      Center(
-                        // The Hub Market logo is about 2.5 times wider than tall.
-                        child: FluxImage(
-                          imageUrl: kAppLogo,
-                          fit: BoxFit.contain,
-                          width: size.width * 0.6,
-                          height: size.width * 0.3,
-                        ),
-                      ),
+                      const Center(child: AppLogo()),
                       const SizedBox(height: 5.0,),
                       CustomTextField(
                           autofillHints: const [AutofillHints.givenName],

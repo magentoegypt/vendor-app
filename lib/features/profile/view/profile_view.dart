@@ -8,7 +8,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:multi_vendor/common/AppDrawer.dart';
 import '../../../../core/config/extensions.dart';
 import '../../../../common/custom_text_field.dart';
-import '../../../../common/flux_image.dart';
+import '../../../../common/app_logo.dart';
 import '../../../../core/config/app_constants.dart';
 import '../../../../core/config/colors.dart';
 import '../../../../core/config/locator.dart';
@@ -161,7 +161,6 @@ class _ProfileViewState extends State<ProfileViewWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
     return Scaffold(
       key: _scaffoldKey,
       appBar: AppBars(context,_scaffoldKey,AppLocalizations.of(context)!.sellerProfile,true,true),
@@ -285,15 +284,7 @@ class _ProfileViewState extends State<ProfileViewWidget> {
                           ),
                         ),
                       ),
-                      Center(
-                        // The Hub Market logo is about 2.5 times wider than tall.
-                        child: FluxImage(
-                          imageUrl: kAppLogo,
-                          fit: BoxFit.contain,
-                          width: size.width * 0.6,
-                          height: size.width * 0.3,
-                        ),
-                      ),
+                      const Center(child: AppLogo()),
                       const SizedBox(height: 5.0),
 
                       CustomTextField(
