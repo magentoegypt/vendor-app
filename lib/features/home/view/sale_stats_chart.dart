@@ -31,10 +31,25 @@ class SaleStatsChart extends StatelessWidget {
     );
   }
 
-  /// Whole-number steps for an order count, about five of them: 1 up to 5
-  /// orders, then 2, 3, ...
-  static double orderStep(num highest) =>
-      math.max(1, (highest / 5).ceil()).toDouble();
+  /// The Y axis step for an order count: a whole 1, 2 or 5 times a power of
+  /// ten, with at most five steps up to [orderTop].
+  static double orderStep(num highest) {
+    for (var power = 1.0;; power *= 10) {
+      for (final nice in const [1, 2, 5]) {
+        final step = nice * power;
+        if ((highest / step).floor() + 1 <= 5) return step;
+      }
+    }
+  }
+
+  /// The top of the Y axis: the first step above the busiest day, so that its
+  /// bar never touches the top, and never under 5. With one order a day the
+  /// axis ran from 0 to 1: the bars filled the chart, with no line between
+  /// (TC77).
+  static double orderTop(num highest) {
+    final step = orderStep(highest);
+    return math.max(5.0, ((highest / step).floor() + 1) * step);
+  }
 
   /// "2026-9-27" -> "9-27": the year is the same on every bar and made the
   /// labels too wide to fit a week across the card.
@@ -55,6 +70,10 @@ class SaleStatsChart extends StatelessWidget {
     ];
     final highest = stats.fold<num>(0, (m, day) => math.max(m, day.numberOfOrder ?? 0));
     final step = orderStep(highest);
+    final top = orderTop(highest);
+    // Dashed, at every step: the default line is a faint 0.4 px.
+    final gridLine = FlLine(
+        color: Colors.grey.withValues(alpha: 0.5), strokeWidth: 1, dashArray: const [4, 4]);
 
     // The whole range fits the card: it used to scroll sideways, opening on
     // the oldest days in English and scrolling the Y axis out of view in
@@ -72,7 +91,7 @@ class SaleStatsChart extends StatelessWidget {
         child: BarChart(
           BarChartData(
             minY: 0,
-            maxY: math.max(step, (highest / step).ceil() * step),
+            maxY: top,
             titlesData: FlTitlesData(
               rightTitles: const AxisTitles(
                 sideTitles: SideTitles(showTitles: false),
@@ -107,7 +126,17 @@ class SaleStatsChart extends StatelessWidget {
             gridData: FlGridData(
                 drawHorizontalLine: true,
                 drawVerticalLine: false,
-                horizontalInterval: step),
+                horizontalInterval: step,
+                getDrawingHorizontalLine: (_) => gridLine),
+            // fl_chart draws the grid between the bottom and the top only: the
+            // top step gets its line here.
+            extraLinesData: ExtraLinesData(horizontalLines: [
+              HorizontalLine(
+                  y: top,
+                  color: gridLine.color,
+                  strokeWidth: gridLine.strokeWidth,
+                  dashArray: gridLine.dashArray),
+            ]),
             alignment: BarChartAlignment.spaceAround,
           ),
         ),

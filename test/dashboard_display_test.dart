@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -58,9 +59,47 @@ void main() {
   group('Sales chart (14zb93nv1jw items 3-4)', () {
     test('the Y axis counts orders in whole steps', () {
       expect(SaleStatsChart.orderStep(0), 1);
-      expect(SaleStatsChart.orderStep(5), 1);
+      expect(SaleStatsChart.orderStep(4), 1);
+      expect(SaleStatsChart.orderStep(5), 2);
       expect(SaleStatsChart.orderStep(6), 2);
       expect(SaleStatsChart.orderStep(23), 5);
+      expect(SaleStatsChart.orderStep(46), 10);
+    });
+
+    test('the axis ends a step above the busiest day, and never under 5 (TC77)', () {
+      expect(SaleStatsChart.orderTop(0), 5);
+      expect(SaleStatsChart.orderTop(1), 5);
+      expect(SaleStatsChart.orderTop(4), 5);
+      expect(SaleStatsChart.orderTop(5), 6);
+      expect(SaleStatsChart.orderTop(40), 50);
+      expect(SaleStatsChart.orderTop(46), 50);
+    });
+
+    testWidgets('one order a day gets a scale and dashed lines (TC77)', (tester) async {
+      // QA's week: one order on two days.
+      final stats = [
+        for (final day in ['26', '27', '28', '29', '30'])
+          OrderChartData.fromJson(
+              {'time': '2026-9-$day', 'number_of_order': day == '28' || day == '30' ? 1 : 0}),
+      ];
+      await tester.pumpWidget(MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(body: SaleStatsChart(saleStats: stats)),
+      ));
+      await tester.pump();
+
+      final chart = tester.widget<BarChart>(find.byType(BarChart)).data;
+      // 0 to 5 in steps of 1, not 0 to 1 with the bars touching the top.
+      expect(chart.maxY, 5);
+      expect(chart.gridData.horizontalInterval, 1);
+      for (final label in ['0', '1', '2', '3', '4', '5']) {
+        expect(find.text(label), findsOneWidget);
+      }
+      // Dashed lines between the steps, and at the top one.
+      expect(chart.gridData.getDrawingHorizontalLine(1).dashArray, isNotEmpty);
+      expect(chart.extraLinesData.horizontalLines.single.y, 5);
+      expect(chart.extraLinesData.horizontalLines.single.dashArray, isNotEmpty);
     });
 
     test('dates drop the year so a week fits the card', () {
