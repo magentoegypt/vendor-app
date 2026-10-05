@@ -64,6 +64,25 @@ void main() {
     });
   });
 
+  group('Order 3000000182 (TC90, 14zb93nvwph)', () {
+    test('the shipping method comes with the order', () {
+      expect(
+          details.OrderModel.fromJson({'shipping_description': 'Flat Rate - Fixed'}).shippingDescription,
+          'Flat Rate - Fixed');
+      expect(details.OrderModel.fromJson({}).shippingDescription, isNull);
+    });
+
+    test('the item card shows row_total as Subtotal, and Row Total with tax less the discount', () {
+      // The values the backend gives for the item: the card shows them as
+      // the web admin does, 3,500 and 3,740.
+      final item = details.Items.fromJson(
+          {'row_total': 3500, 'tax_amount': 340, 'discount_amount': 100});
+
+      expect(item.rowTotal, 3500);
+      expect(item.rowTotalWithTax, 3740);
+    });
+  });
+
   group('A special price is shown as a discount (TC89, 14zb93nvw6m)', () {
     // Order 3000000181: test61 at a special price of 2,000 instead of 4,000.
     // The admin shows Discount Amount 2,000, Subtotal 4,000, Discount -2,000.
@@ -124,6 +143,12 @@ void main() {
       expect(plain.shownBaseDiscount, 0);
       expect(order([item(own: 2000)], discount: -50).shownBaseDiscount, -50);
       expect(details.Items.fromJson(item(own: 2000)).shownDiscount, 0);
+    });
+
+    test("a seller's order, which stores its discount positive, shows it negative (TC90)", () {
+      // Order 3000000182: the seller's order says base_discount_amount 100.
+      expect(order([item(own: 3500, sold: 3500)], subtotal: 3500, discount: 100).shownBaseDiscount, -100);
+      expect(order([item(own: 3500, sold: 3500)], subtotal: 3500).shownBaseDiscount, 0);
     });
 
     test("a configurable's child row counts no discount of its own", () {

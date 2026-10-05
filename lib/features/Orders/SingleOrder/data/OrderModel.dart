@@ -56,6 +56,8 @@ class OrderModel {
   String? customerGroup;
   String? shippingAndHandling;
   String? customerName;
+  /// The order's shipping method, e.g. "Flat Rate - Fixed" (TC90).
+  String? shippingDescription;
   String? paymentMethod;
   String? baseCurrencyCode;
   String? orderCurrencyCode;
@@ -149,11 +151,13 @@ class OrderModel {
               sum + (item.baseOriginalPrice ?? item.basePrice ?? 0) * (item.qtyOrdered ?? 0))
       : baseSubtotal;
 
-  /// The Discount line: the cart discount (stored as a negative) and the
-  /// catalog discounts, or 0 when there are none.
-  num get shownBaseDiscount => baseCatalogDiscount > _priceDrop
-      ? -(baseDiscountAmount ?? 0).abs() - baseCatalogDiscount
-      : (baseDiscountAmount ?? 0);
+  /// The Discount line: the cart discount and the catalog discounts, as a
+  /// negative, or 0 when there are none. A seller's order stores its
+  /// discount as a positive amount, and showed "AED 100.00" (TC90).
+  num get shownBaseDiscount {
+    final discount = (baseDiscountAmount ?? 0).abs() + baseCatalogDiscount;
+    return discount > _priceDrop ? -discount : 0;
+  }
 
   OrderModel.fromJson(Map<String, dynamic> json) {
     commission = JsonParser.toNum(json['commission']);
@@ -207,6 +211,7 @@ class OrderModel {
     customerGroup = JsonParser.toStr(json['customer_group']);
     shippingAndHandling = JsonParser.toStr(json['shipping_and_handling']);
     customerName = JsonParser.toStr(json['customer_name']);
+    shippingDescription = JsonParser.toStr(json['shipping_description']);
     paymentMethod = JsonParser.toStr(json['payment_method']);
     baseCurrencyCode = JsonParser.toStr(json['base_currency_code']);
     orderCurrencyCode = JsonParser.toStr(json['order_currency_code']);

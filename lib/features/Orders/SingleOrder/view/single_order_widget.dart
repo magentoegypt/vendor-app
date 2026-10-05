@@ -159,7 +159,11 @@ class _SingleOrderViewState extends State<SingleOrderWidget> {
                                   _buildRow(AppLocalizations.of(context)!.paymentInformation, _paymentInformation()),
                                   if ((orderModel?.orderCurrencyCode ?? '').isNotEmpty)
                                     _buildRow('', AppLocalizations.of(context)!.orderPlacedInCurrency(orderModel!.orderCurrencyCode!)),
-                                  _buildRow(AppLocalizations.of(context)!.shippingHandlingInformation, AppLocalizations.of(context)!.noShippinginformationavailable),
+                                  // The order's method since the backend sends it (TC90).
+                                  _buildRow(AppLocalizations.of(context)!.shippingHandlingInformation,
+                                      (orderModel?.shippingDescription ?? '').trim().isNotEmpty
+                                          ? orderModel!.shippingDescription!
+                                          : AppLocalizations.of(context)!.noShippinginformationavailable),
                                 ],
                               ),
                             ),
